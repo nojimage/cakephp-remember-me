@@ -13,24 +13,28 @@ use Cake\Utility\Security;
 class CookieAuthenticate extends BaseAuthenticate
 {
 
-    protected $_defaultConfig = [
-        'fields' => [
-            'username' => 'username',
-            'token' => 'login_cookie',
-        ],
-        'inputKey' => 'remember_me',
-        'cookie' => [
-            'name' => 'rememberMe',
-            'expires' => '+30 days',
-            'secure' => false,
-            'httpOnly' => true,
-        ],
-        'cookieLifeTime' => '+30 days',
-        'userModel' => 'Users',
-        'scope' => [],
-        'contain' => null,
-        'passwordHasher' => 'Default'
-    ];
+    public function __construct(\Cake\Controller\ComponentRegistry $registry, array $config = array())
+    {
+        $this->config([
+            'fields' => [
+                'username' => 'username',
+                'token' => 'login_cookie',
+            ],
+            'inputKey' => 'remember_me',
+            'cookie' => [
+                'name' => 'rememberMe',
+                'expires' => '+30 days',
+                'secure' => false,
+                'httpOnly' => true,
+            ],
+            'cookieLifeTime' => '+30 days',
+            'userModel' => 'Users',
+            'scope' => [],
+            'contain' => null,
+            'passwordHasher' => 'Default'
+        ]);
+        parent::__construct($registry, $config);
+    }
 
     protected function _setCookie(Response $response, $cookie)
     {
