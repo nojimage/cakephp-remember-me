@@ -9,7 +9,7 @@ use Cake\Datasource\EntityInterface;
 use Cake\Event\Event;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
-use Cake\I18n\Time;
+use Cake\I18n\FrozenTime;
 use Cake\ORM\TableRegistry;
 use Cake\Utility\Security;
 
@@ -53,15 +53,15 @@ class CookieAuthenticate extends BaseAuthenticate
      *
      * @param Response $response a Response instance.
      * @param string $cookie encrypted login token
-     * @return void
+     * @return Response
      */
     protected function _setCookie(Response $response, $cookie)
     {
-        $config = $this->_config['cookie'];
-        $expires = new Time($config['expires']);
+        $config = $this->getConfig('cookie');
+        $expires = new FrozenTime($config['expires']);
         $config['value'] = $cookie;
         $config['expire'] = $expires->format('U');
-        $response->cookie($config);
+        return $response->withCookie($config);
     }
 
     /**
@@ -73,10 +73,10 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function _saveToken(array $user, $token)
     {
-        $fields = $this->_config['fields'];
-        $userTable = TableRegistry::get($this->_config['userModel']);
+        $fields = $this->getConfig('fields');
+        $userTable = TableRegistry::get($this->getConfig('userModel'));
         $entity = $userTable->get($user[$userTable->primaryKey()]);
-        $entity = $userTable->patchEntity($entity, [
+        $userTable->patchEntity($entity, [
             $fields['token'] => $this->passwordHasher()->hash($token),
         ]);
 
@@ -91,7 +91,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function _getCookie(ServerRequest $request)
     {
-        return $request->cookie($this->_config['cookie']['name']);
+        return $request->getCookie($this->getConfig('cookie.name'));
     }
 
     /**
@@ -187,8 +187,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function _findUser($username, $password = null)
     {
-        $fields = $this->_config['fields'];
-        $this->_config['fields']['password'] = $fields['token'];
+        $this->setConfig('fields.password', $this->getConfig('fields.token'));
 
         return parent::_findUser($username, $password);
     }
@@ -213,17 +212,17 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function onAfterIdentify(Event $event, array $user)
     {
-        $authComponent = $event->subject();
+        $authComponent = $event->getSubject();
         /* @var $authComponent AuthComponent */
 
         if (!$user) {
             // when authenticate failed, clear cookie token.
-            $this->_setCookie($authComponent->response, '');
+            $authComponent->response = $this->_setCookie($authComponent->response, '');
 
             return;
         }
 
-        if (!$authComponent->request->data($this->_config['inputKey'])) {
+        if (!$authComponent->request->getData($this->getConfig('inputKey'))) {
             // nothing to do
             return;
         }
@@ -234,8 +233,8 @@ class CookieAuthenticate extends BaseAuthenticate
         $this->_saveToken($user, $token);
 
         // write cookie
-        $username = $user[$this->_config['fields']['username']];
-        $this->_setCookie($authComponent->response, $this->_encodeCookie($username, $token));
+        $username = $user[$this->getConfig('fields.username')];
+        $authComponent->response = $this->_setCookie($authComponent->response, $this->_encodeCookie($username, $token));
     }
 
     /**
@@ -247,7 +246,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function onLogout(Event $event, array $user)
     {
-        $authComponent = $event->subject();
+        $authComponent = $event->getSubject();
         $this->_setCookie($authComponent->response, '');
 
         return true;
