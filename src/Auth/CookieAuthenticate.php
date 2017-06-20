@@ -268,7 +268,7 @@ class CookieAuthenticate extends BaseAuthenticate
     public function onLogout(Event $event, array $user)
     {
         $authComponent = $event->getSubject();
-        $this->_setCookie($authComponent->response, '');
+        $authComponent->response = $this->_setCookie($authComponent->response, '');
 
         return true;
     }
