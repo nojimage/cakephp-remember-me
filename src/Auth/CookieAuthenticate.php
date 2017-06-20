@@ -3,17 +3,29 @@
 namespace RememberMe\Auth;
 
 use Cake\Auth\BaseAuthenticate;
+use Cake\Controller\ComponentRegistry;
+use Cake\Controller\Component\AuthComponent;
+use Cake\Datasource\EntityInterface;
 use Cake\Event\Event;
+use Cake\I18n\Time;
 use Cake\Network\Request;
 use Cake\Network\Response;
 use Cake\ORM\TableRegistry;
-use Cake\I18n\Time;
 use Cake\Utility\Security;
 
+/**
+ * Cookie Authenticate
+ */
 class CookieAuthenticate extends BaseAuthenticate
 {
 
-    public function __construct(\Cake\Controller\ComponentRegistry $registry, array $config = array())
+    /**
+     * Constructor
+     *
+     * @param ComponentRegistry $registry components
+     * @param array $config authenticate config
+     */
+    public function __construct(ComponentRegistry $registry, array $config = [])
     {
         $this->config([
             'fields' => [
@@ -36,6 +48,13 @@ class CookieAuthenticate extends BaseAuthenticate
         parent::__construct($registry, $config);
     }
 
+    /**
+     * set login token to cookie
+     *
+     * @param Response $response a Response instance.
+     * @param string $cookie encrypted login token
+     * @return void
+     */
     protected function _setCookie(Response $response, $cookie)
     {
         $config = $this->_config['cookie'];
@@ -45,6 +64,13 @@ class CookieAuthenticate extends BaseAuthenticate
         $response->cookie($config);
     }
 
+    /**
+     * save login token to users table
+     *
+     * @param array $user logged in user info
+     * @param string $token login token
+     * @return EntityInterface|false
+     */
     protected function _saveToken(array $user, $token)
     {
         $fields = $this->_config['fields'];
@@ -53,17 +79,25 @@ class CookieAuthenticate extends BaseAuthenticate
         $entity = $userTable->patchEntity($entity, [
             $fields['token'] => $this->passwordHasher()->hash($token),
         ]);
+
         return $userTable->save($entity);
     }
 
+    /**
+     * get login token form cookie
+     *
+     * @param Request $request a Request instance
+     * @return string
+     */
     protected function _getCookie(Request $request)
     {
         return $request->cookie($this->_config['cookie']['name']);
     }
 
     /**
+     * decode cookie
      *
-     * @param string $cookie
+     * @param string $cookie from request
      * @return array
      */
     protected function _decodeCookie($cookie)
@@ -72,9 +106,10 @@ class CookieAuthenticate extends BaseAuthenticate
     }
 
     /**
+     * encode cookie
      *
-     * @param string $username
-     * @param string $token
+     * @param string $username logged in user name
+     * @param string $token login token
      * @return string
      */
     protected function _encodeCookie($username, $token)
@@ -82,9 +117,16 @@ class CookieAuthenticate extends BaseAuthenticate
         return Security::encrypt(json_encode(compact('username', 'token')), Security::salt());
     }
 
+    /**
+     * generate login token
+     *
+     * @param array $user logged in user info
+     * @return string
+     */
     public function generateToken(array $user)
     {
         $token = Security::hash(serialize(microtime()) . serialize($user));
+
         return $token;
     }
 
@@ -104,30 +146,56 @@ class CookieAuthenticate extends BaseAuthenticate
         if (empty($user['username']) || empty($user['token'])) {
             return false;
         }
+
         return true;
     }
 
+    /**
+     * authenticate
+     *
+     * @param Request $request a Request instance
+     * @param Response $response a Response instance
+     * @return array
+     */
     public function authenticate(\Cake\Network\Request $request, \Cake\Network\Response $response)
     {
         return $this->getUser($request);
     }
 
+    /**
+     * get user from cookie
+     *
+     * @param Request $request a Request instance.
+     * @return bool
+     */
     public function getUser(Request $request)
     {
         if (!$this->_checkFields($request)) {
             return false;
         }
         $user = $this->_decodeCookie($this->_getCookie($request));
+
         return $this->_findUser($user['username'], $user['token']);
     }
 
+    /**
+     * find user with username and login token
+     *
+     * @param string $username request username
+     * @param string $password request token
+     * @return array
+     */
     protected function _findUser($username, $password = null)
     {
         $fields = $this->_config['fields'];
         $this->_config['fields']['password'] = $fields['token'];
+
         return parent::_findUser($username, $password);
     }
 
+    /**
+     * @return array
+     */
     public function implementedEvents()
     {
         return [
@@ -139,21 +207,21 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * event on 'Auth.afterIdentify'
      *
-     * @param Event $event
-     * @param array $user
-     * @return boolean
+     * @param Event $event a Event instance
+     * @param array $user logged in user info
+     * @return void
      */
     public function onAfterIdentify(Event $event, array $user)
     {
         $authComponent = $event->subject();
-        /* @var $authComponent \Cake\Controller\Component\AuthComponent */
+        /* @var $authComponent AuthComponent */
 
         if (!$user) {
             // when authenticate failed, clear cookie token.
             $this->_setCookie($authComponent->response, '');
+
             return;
         }
-
 
         if (!$authComponent->request->data($this->_config['inputKey'])) {
             // nothing to do
@@ -173,15 +241,15 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * event on 'Auth.logout'
      *
-     * @param Event $event
-     * @param array $user
-     * @return boolean
+     * @param Event $event a Event instance
+     * @param array $user logged in user info
+     * @return bool
      */
     public function onLogout(Event $event, array $user)
     {
         $authComponent = $event->subject();
         $this->_setCookie($authComponent->response, '');
+
         return true;
     }
-
 }
