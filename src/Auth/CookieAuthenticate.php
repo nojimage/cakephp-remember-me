@@ -7,9 +7,9 @@ use Cake\Controller\ComponentRegistry;
 use Cake\Controller\Component\AuthComponent;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\Event;
+use Cake\Http\Response;
+use Cake\Http\ServerRequest;
 use Cake\I18n\Time;
-use Cake\Network\Request;
-use Cake\Network\Response;
 use Cake\ORM\TableRegistry;
 use Cake\Utility\Security;
 
@@ -86,10 +86,10 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * get login token form cookie
      *
-     * @param Request $request a Request instance
+     * @param ServerRequest $request a Request instance
      * @return string
      */
-    protected function _getCookie(Request $request)
+    protected function _getCookie(ServerRequest $request)
     {
         return $request->cookie($this->_config['cookie']['name']);
     }
@@ -133,10 +133,10 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * Checks the fields to ensure they are supplied.
      *
-     * @param \Cake\Network\Request $request The request that contains login information.
+     * @param ServerRequest $request The request that contains login information.
      * @return bool False if the fields have not been supplied. True if they exist.
      */
-    protected function _checkFields(Request $request)
+    protected function _checkFields(ServerRequest $request)
     {
         $cookie = $this->_getCookie($request);
         if (empty($cookie) || !is_string($cookie)) {
@@ -153,11 +153,11 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * authenticate
      *
-     * @param Request $request a Request instance
+     * @param ServerRequest $request a Request instance
      * @param Response $response a Response instance
      * @return array
      */
-    public function authenticate(\Cake\Network\Request $request, \Cake\Network\Response $response)
+    public function authenticate(ServerRequest $request, Response $response)
     {
         return $this->getUser($request);
     }
@@ -168,7 +168,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param Request $request a Request instance.
      * @return bool
      */
-    public function getUser(Request $request)
+    public function getUser(ServerRequest $request)
     {
         if (!$this->_checkFields($request)) {
             return false;
