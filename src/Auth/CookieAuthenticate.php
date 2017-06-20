@@ -62,7 +62,7 @@ class CookieAuthenticate extends BaseAuthenticate
         $config['value'] = $cookie;
         $config['expire'] = $expires->format('U');
 
-        return $response->withCookie($config);
+        return $response->withCookie($this->getConfig('cookie.name'), $config);
     }
 
     /**
@@ -124,7 +124,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param array $user logged in user info
      * @return string
      */
-    public function generateToken(array $user)
+    protected function _generateToken(array $user)
     {
         $token = Security::hash(serialize(microtime()) . serialize($user));
 
@@ -232,19 +232,30 @@ class CookieAuthenticate extends BaseAuthenticate
             return;
         }
 
-        if (!$authComponent->request->getData($this->getConfig('inputKey'))) {
-            // nothing to do
-            return;
+        if ($authComponent->request->getData($this->getConfig('inputKey'))) {
+            $authComponent->response = $this->setLoginTokenToCookie($authComponent->response, $user);
         }
+    }
 
-        $token = $this->generateToken($user);
+    /**
+     * Generate and set login token to Response
+     *
+     * @param Response $response a Response instance
+     * @param array $user logged in user info
+     * @return Response
+     */
+    public function setLoginTokenToCookie(Response $response, $user)
+    {
+        $token = $this->_generateToken($user);
 
         // save token
         $this->_saveToken($user, $token);
 
         // write cookie
         $username = $user[$this->getConfig('fields.username')];
-        $authComponent->response = $this->_setCookie($authComponent->response, $this->encryptToken($username, $token));
+        $response = $this->_setCookie($response, $this->encryptToken($username, $token));
+
+        return $response;
     }
 
     /**

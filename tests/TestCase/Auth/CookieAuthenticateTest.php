@@ -134,4 +134,16 @@ class CookieAuthenticateTest extends TestCase
         $result = $this->auth->decodeCookie($encoded);
         $this->assertSame(['username' => 'foo', 'token' => '123456'], $result);
     }
+
+    public function testSetLoginTokenToCookie()
+    {
+        $user = ['id' => 1, 'username' => 'foo'];
+        $response = $this->auth->setLoginTokenToCookie(new Response(), $user);
+
+        $this->assertNotEmpty($response->getCookie('rememberMe'));
+
+        $decode = $this->auth->decodeCookie($response->getCookie('rememberMe')['value']);
+        $this->assertSame('foo', $decode['username']);
+        $this->assertArrayHasKey('token', $decode);
+    }
 }
