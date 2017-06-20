@@ -61,6 +61,7 @@ class CookieAuthenticate extends BaseAuthenticate
         $expires = new FrozenTime($config['expires']);
         $config['value'] = $cookie;
         $config['expire'] = $expires->format('U');
+
         return $response->withCookie($config);
     }
 
@@ -100,7 +101,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param string $cookie from request
      * @return array
      */
-    protected function _decodeCookie($cookie)
+    public function decodeCookie($cookie)
     {
         return json_decode(Security::decrypt($cookie, Security::salt()), true);
     }
@@ -112,7 +113,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param string $token login token
      * @return string
      */
-    protected function _encodeCookie($username, $token)
+    public function encryptToken($username, $token)
     {
         return Security::encrypt(json_encode(compact('username', 'token')), Security::salt());
     }
@@ -142,7 +143,7 @@ class CookieAuthenticate extends BaseAuthenticate
         if (empty($cookie) || !is_string($cookie)) {
             return false;
         }
-        $user = $this->_decodeCookie($cookie);
+        $user = $this->decodeCookie($cookie);
         if (empty($user['username']) || empty($user['token'])) {
             return false;
         }
@@ -173,7 +174,7 @@ class CookieAuthenticate extends BaseAuthenticate
         if (!$this->_checkFields($request)) {
             return false;
         }
-        $user = $this->_decodeCookie($this->_getCookie($request));
+        $user = $this->decodeCookie($this->_getCookie($request));
 
         return $this->_findUser($user['username'], $user['token']);
     }
@@ -187,9 +188,18 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function _findUser($username, $password = null)
     {
+        $originalPasswordField = $this->getConfig('fields.password');
         $this->setConfig('fields.password', $this->getConfig('fields.token'));
 
-        return parent::_findUser($username, $password);
+        $user = parent::_findUser($username, $password);
+
+        $this->setConfig('fields.password', $originalPasswordField);
+
+        if (is_array($user) && isset($user[$originalPasswordField])) {
+            unset($user[$originalPasswordField]);
+        }
+
+        return $user;
     }
 
     /**
@@ -234,7 +244,7 @@ class CookieAuthenticate extends BaseAuthenticate
 
         // write cookie
         $username = $user[$this->getConfig('fields.username')];
-        $authComponent->response = $this->_setCookie($authComponent->response, $this->_encodeCookie($username, $token));
+        $authComponent->response = $this->_setCookie($authComponent->response, $this->encryptToken($username, $token));
     }
 
     /**
