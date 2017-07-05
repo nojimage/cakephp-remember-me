@@ -249,11 +249,13 @@ class CookieAuthenticate extends BaseAuthenticate
         $token = $this->_generateToken($user);
 
         // save token
-        $this->_saveToken($user, $token);
+        $entity = $this->_saveToken($user, $token);
 
-        // write cookie
-        $username = $user[$this->getConfig('fields.username')];
-        $response = $this->_setCookie($response, $this->encryptToken($username, $token));
+        if ($entity) {
+            // write cookie
+            $username = $entity[$this->getConfig('fields.username')];
+            $response = $this->_setCookie($response, $this->encryptToken($username, $token));
+        }
 
         return $response;
     }
