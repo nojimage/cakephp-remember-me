@@ -33,6 +33,7 @@ class CookieAuthenticate extends BaseAuthenticate
                 'token' => 'login_cookie',
             ],
             'inputKey' => 'remember_me',
+            'always' => false,
             'cookie' => [
                 'name' => 'rememberMe',
                 'expires' => '+30 days',
@@ -232,7 +233,7 @@ class CookieAuthenticate extends BaseAuthenticate
             return;
         }
 
-        if ($authComponent->request->getData($this->getConfig('inputKey'))) {
+        if ($this->getConfig('always') || $authComponent->request->getData($this->getConfig('inputKey'))) {
             $authComponent->response = $this->setLoginTokenToCookie($authComponent->response, $user);
         }
     }
