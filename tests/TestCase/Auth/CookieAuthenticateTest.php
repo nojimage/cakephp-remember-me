@@ -249,7 +249,7 @@ class CookieAuthenticateTest extends TestCase
      */
     public function testSetLoginTokenToCookie()
     {
-        FrozenTime::setTestNow('2017-09-01 12:23:34');
+        FrozenTime::setTestNow('2017-08-01 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
         $response = $this->auth->setLoginTokenToCookie(new Response(), $user);
 
@@ -269,7 +269,7 @@ class CookieAuthenticateTest extends TestCase
 
         $this->assertSame($decode['series'], $tokens->last()->series);
         $this->assertSame($decode['token'], $tokens->last()->token);
-        $this->assertSame('2017-10-01T12:23:34+09:00', $tokens->last()->expires->toIso8601String());
+        $this->assertTrue($tokens->last()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
     }
 
     /**
