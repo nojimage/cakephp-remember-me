@@ -42,7 +42,7 @@ class CookieAuthenticate extends BaseAuthenticate
             'cookie' => [
                 'name' => 'rememberMe',
                 'expires' => '+30 days',
-                'secure' => false,
+                'secure' => true,
                 'httpOnly' => true,
             ],
             'tokenStorageModel' => 'RememberMe.RememberMeTokens',

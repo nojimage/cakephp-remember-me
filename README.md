@@ -81,10 +81,10 @@ default: `false`
 
 Write option for login cookie.
 
-- name: cookie name
-- expires: cookie expiration
-- secure: secure flag
-- httpOnly: http only flag
+- name: cookie name (default: `'rememberMe'`)
+- expires: cookie expiration (default: `'+30 days'`)
+- secure: secure flag (default: `true`)
+- httpOnly: http only flag (default: `true`)
 
 ```
     'RememberMe.Cookie' => [
