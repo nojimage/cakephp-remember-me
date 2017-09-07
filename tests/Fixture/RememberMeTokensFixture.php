@@ -42,5 +42,66 @@ class RememberMeTokensFixture extends TestFixture
      *
      * @var array
      */
-    public $records = [];
+    public $records = [
+        [
+            'id' => 1,
+            'created' => '2017-09-01 11:22:33',
+            'modified' => '2017-09-01 11:22:33',
+            'table' => 'AuthUsers',
+            'foreign_id' => '1',
+            'series' => 'series_foo_1',
+            'token' => '',
+            'expires' => '2017-10-01 11:22:33',
+        ],
+        [
+            'id' => 2,
+            'created' => '2017-09-01 11:22:33',
+            'modified' => '2017-09-01 11:22:33',
+            'table' => 'AuthUsers',
+            'foreign_id' => '1',
+            'series' => 'series_foo_2',
+            'token' => '',
+            'expires' => '2017-10-01 11:22:33',
+        ],
+        [
+            'id' => 3,
+            'created' => '2017-09-01 11:22:33',
+            'modified' => '2017-09-01 11:22:33',
+            'table' => 'AuthUsers',
+            'foreign_id' => '2',
+            'series' => 'series_bar_1',
+            'token' => '',
+            'expires' => '2017-10-01 11:22:33',
+        ],
+        [
+            'id' => 4,
+            'created' => '2017-09-01 11:22:33',
+            'modified' => '2017-09-01 11:22:33',
+            'table' => 'AuthUsers',
+            'foreign_id' => '2',
+            'series' => 'series_bar_2',
+            'token' => '',
+            'expires' => '2017-10-01 11:22:33',
+        ],
+        [
+            'id' => 5,
+            'created' => '2017-09-01 11:22:33',
+            'modified' => '2017-09-01 11:22:33',
+            'table' => 'AuthUsers',
+            'foreign_id' => '3',
+            'series' => 'series_boo_1',
+            'token' => '',
+            'expires' => '2017-10-01 11:22:33',
+        ],
+        [
+            'id' => 6,
+            'created' => '2017-09-01 11:22:33',
+            'modified' => '2017-09-01 11:22:33',
+            'table' => 'AuthUsers',
+            'foreign_id' => '3',
+            'series' => 'series_boo_2',
+            'token' => '',
+            'expires' => '2017-10-01 11:22:33',
+        ],
+    ];
 }

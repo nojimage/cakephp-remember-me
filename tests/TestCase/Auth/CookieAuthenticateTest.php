@@ -3,15 +3,15 @@
 namespace RememberMe\Test\TestCase\Auth;
 
 use Cake\Controller\ComponentRegistry;
-use Cake\Core\Plugin;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
-use Cake\I18n\Time;
-use Cake\ORM\Entity;
+use Cake\I18n\FrozenTime;
+use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Security;
 use RememberMe\Auth\CookieAuthenticate;
+use RememberMe\Model\Table\RememberMeTokensTable;
 
 /**
  * Test case for CookieAuthenticate
@@ -24,7 +24,10 @@ class CookieAuthenticateTest extends TestCase
      *
      * @var array
      */
-    public $fixtures = ['plugin.remember_me.auth_users'];
+    public $fixtures = [
+        'plugin.RememberMe.AuthUsers',
+        'plugin.RememberMe.RememberMeTokens',
+    ];
 
     /**
      * @var ComponentRegistry
@@ -37,7 +40,7 @@ class CookieAuthenticateTest extends TestCase
     private $auth;
 
     /**
-     * @var \Cake\Http\Response
+     * @var Response
      */
     private $response;
 
@@ -45,6 +48,18 @@ class CookieAuthenticateTest extends TestCase
      * @var string
      */
     private $salt;
+
+    /**
+     *
+     * @var RememberMeTokensTable
+     */
+    private $Tokens;
+
+    /**
+     *
+     * @var Table
+     */
+    private $Users;
 
     /**
      * setup
@@ -59,11 +74,14 @@ class CookieAuthenticateTest extends TestCase
             'userModel' => 'AuthUsers'
         ]);
         $password = password_hash('password', PASSWORD_DEFAULT);
-        $token = password_hash('logintoken', PASSWORD_DEFAULT);
 
         TableRegistry::clear();
-        $Users = TableRegistry::get('AuthUsers');
-        $Users->updateAll(['password' => $password, 'login_cookie' => $token], []);
+        // set password
+        $this->Users = TableRegistry::get('AuthUsers');
+        $this->Users->updateAll(['password' => $password], []);
+        // set tokens
+        $this->Tokens = TableRegistry::get('RememberMe.RememberMeTokens');
+        $this->Tokens->updateAll(['token' => 'logintoken'], []);
 
         $this->response = $this->getMockBuilder(Response::class)->getMock();
         $this->salt = Security::salt();
@@ -77,7 +95,10 @@ class CookieAuthenticateTest extends TestCase
      */
     public function tearDown()
     {
+        unset($this->Users);
+        unset($this->Tokens);
         Security::salt($this->salt);
+        FrozenTime::setTestNow();
         parent::tearDown();
     }
 
@@ -90,10 +111,10 @@ class CookieAuthenticateTest extends TestCase
     {
         $object = new CookieAuthenticate($this->Collection, [
             'userModel' => 'AuthUsers',
-            'fields' => ['username' => 'user', 'token' => 'login_token']
+            'fields' => ['username' => 'user']
         ]);
         $this->assertEquals('AuthUsers', $object->getConfig('userModel'));
-        $this->assertEquals(['username' => 'user', 'token' => 'login_token', 'password' => 'password'], $object->getConfig('fields'));
+        $this->assertEquals(['username' => 'user', 'password' => 'password'], $object->getConfig('fields'));
     }
 
     /**
@@ -114,9 +135,10 @@ class CookieAuthenticateTest extends TestCase
      */
     public function testAuthenticateSuccess()
     {
+        FrozenTime::setTestNow('2017-09-01 12:23:34');
         $request = new ServerRequest('posts/index');
         $cookies = [
-            'rememberMe' => $this->auth->encryptToken('bar', 'logintoken'),
+            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'logintoken'),
         ];
         $request = $request->withCookieParams($cookies);
         $result = $this->auth->authenticate($request, $this->response);
@@ -124,19 +146,110 @@ class CookieAuthenticateTest extends TestCase
         $expected = [
             'id' => 2,
             'username' => 'bar',
+            'remember_me_token' => [
+                'id' => 3,
+                'series' => 'series_bar_1',
+            ],
         ];
         $this->assertEquals($expected, $result);
     }
 
-    public function testDecodeCookie()
+    /**
+     * test authenticate failure (invalid token)
+     *
+     * @return void
+     */
+    public function testAuthenticateFailureWithInvalidToken()
     {
-        $encoded = $this->auth->encryptToken('foo', '123456');
-        $result = $this->auth->decodeCookie($encoded);
-        $this->assertSame(['username' => 'foo', 'token' => '123456'], $result);
+        FrozenTime::setTestNow('2017-09-01 12:23:34');
+        $request = new ServerRequest('posts/index');
+        $cookies = [
+            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'invalid_token'),
+        ];
+        $request = $request->withCookieParams($cookies);
+        $result = $this->auth->authenticate($request, $this->response);
+
+        $this->assertFalse($result);
+
+        $this->assertFalse($this->Tokens->exists([
+                'series' => 'series_bar_1',
+            ]), 'drop series_bar_1 token');
+
+        $user2Tokens = $this->Tokens->find()->where([
+                'table' => 'AuthUsers',
+                'foreign_id' => 2,
+            ])->all();
+        $this->assertCount(1, $user2Tokens);
     }
 
+    /**
+     * test authenticate failure (expire token)
+     *
+     * @return void
+     */
+    public function testAuthenticateFailureWithExpireToken()
+    {
+        FrozenTime::setTestNow('2017-10-01 11:22:34');
+        $request = new ServerRequest('posts/index');
+        $cookies = [
+            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'logintoken'),
+        ];
+        $request = $request->withCookieParams($cookies);
+        $result = $this->auth->authenticate($request, $this->response);
+
+        $this->assertFalse($result);
+
+        $this->assertFalse($this->Tokens->exists([
+                'series' => 'series_bar_1',
+            ]), 'drop series_bar_1 token');
+
+        $user2Tokens = $this->Tokens->find()->where([
+                'table' => 'AuthUsers',
+                'foreign_id' => 2,
+            ])->all();
+        $this->assertCount(1, $user2Tokens);
+    }
+
+    /**
+     * test authenticate failure (invalid series)
+     *
+     * @return void
+     */
+    public function testAuthenticateFailureWithInvalidSeries()
+    {
+        FrozenTime::setTestNow('2017-09-01 12:23:34');
+        $request = new ServerRequest('posts/index');
+        $cookies = [
+            'rememberMe' => $this->auth->encryptToken('bar', 'invalid_series', 'logintoken'),
+        ];
+        $request = $request->withCookieParams($cookies);
+        $result = $this->auth->authenticate($request, $this->response);
+
+        $this->assertFalse($result);
+
+        $user2Tokens = $this->Tokens->find()->where([
+                'table' => 'AuthUsers',
+                'foreign_id' => 2,
+            ])->all();
+        $this->assertCount(2, $user2Tokens);
+    }
+
+    /**
+     * test for decodeCookie
+     */
+    public function testDecodeCookie()
+    {
+        $encoded = $this->auth->encryptToken('foo', 'series_foo_1', '123456');
+        $result = $this->auth->decodeCookie($encoded);
+        $this->assertSame(['username' => 'foo', 'series' => 'series_foo_1', 'token' => '123456'], $result);
+    }
+
+    /**
+     * test for setLoginTokenToCookie
+     */
     public function testSetLoginTokenToCookie()
     {
+        FrozenTime::setTestNow('2017-09-01 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
         $response = $this->auth->setLoginTokenToCookie(new Response(), $user);
 
@@ -145,5 +258,51 @@ class CookieAuthenticateTest extends TestCase
         $decode = $this->auth->decodeCookie($response->getCookie('rememberMe')['value']);
         $this->assertSame('foo', $decode['username']);
         $this->assertArrayHasKey('token', $decode);
+        $this->assertArrayHasKey('series', $decode);
+
+        // saved to table
+        $tokens = $this->Tokens->find()->where([
+                'table' => 'AuthUsers',
+                'foreign_id' => 1,
+            ])->all();
+        $this->assertCount(3, $tokens);
+
+        $this->assertSame($decode['series'], $tokens->last()->series);
+        $this->assertSame($decode['token'], $tokens->last()->token);
+        $this->assertSame('2017-10-01T12:23:34+09:00', $tokens->last()->expires->toIso8601String());
+    }
+
+    /**
+     * test for setLoginTokenToCookie when token exists
+     */
+    public function testSetLoginTokenToCookieWhenTokenExists()
+    {
+        FrozenTime::setTestNow('2017-09-01 12:23:34');
+        $user = [
+            'id' => 1,
+            'username' => 'foo',
+            'remember_me_token' => [
+                'id' => 2,
+            ],
+        ];
+        $response = $this->auth->setLoginTokenToCookie(new Response(), $user);
+
+        $this->assertNotEmpty($response->getCookie('rememberMe'));
+
+        $decode = $this->auth->decodeCookie($response->getCookie('rememberMe')['value']);
+        $this->assertSame('foo', $decode['username']);
+        $this->assertArrayHasKey('token', $decode);
+        $this->assertArrayHasKey('series', $decode);
+
+        // saved to table
+        $tokens = $this->Tokens->find()->where([
+                'table' => 'AuthUsers',
+                'foreign_id' => 1,
+            ])->all();
+        $this->assertCount(2, $tokens);
+
+        $this->assertSame('series_foo_2', $tokens->last()->series);
+        $this->assertSame($decode['token'], $tokens->last()->token);
+        $this->assertSame('2017-10-01T12:23:34+09:00', $tokens->last()->expires->toIso8601String());
     }
 }

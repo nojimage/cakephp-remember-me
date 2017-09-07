@@ -3,21 +3,27 @@
 namespace RememberMe\Auth;
 
 use Cake\Auth\BaseAuthenticate;
-use Cake\Controller\ComponentRegistry;
 use Cake\Controller\Component\AuthComponent;
+use Cake\Controller\ComponentRegistry;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\Event;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\I18n\FrozenTime;
+use Cake\ORM\Query;
 use Cake\ORM\TableRegistry;
+use Cake\Utility\Hash;
 use Cake\Utility\Security;
+use InvalidArgumentException;
+use RememberMe\Model\Entity\RememberMeToken;
 
 /**
  * Cookie Authenticate
  */
 class CookieAuthenticate extends BaseAuthenticate
 {
+
+    public static $userTokenFieldName = 'remember_me_token';
 
     /**
      * Constructor
@@ -30,7 +36,6 @@ class CookieAuthenticate extends BaseAuthenticate
         $this->config([
             'fields' => [
                 'username' => 'username',
-                'token' => 'login_cookie',
             ],
             'inputKey' => 'remember_me',
             'always' => false,
@@ -40,11 +45,10 @@ class CookieAuthenticate extends BaseAuthenticate
                 'secure' => false,
                 'httpOnly' => true,
             ],
-            'cookieLifeTime' => '+30 days',
+            'tokenStorageModel' => 'RememberMe.RememberMeTokens',
             'userModel' => 'Users',
             'scope' => [],
             'contain' => null,
-            'passwordHasher' => 'Default'
         ]);
         parent::__construct($registry, $config);
     }
@@ -56,7 +60,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param string $cookie encrypted login token
      * @return Response
      */
-    protected function _setCookie(Response $response, $cookie)
+    protected function setCookie(Response $response, $cookie)
     {
         $config = $this->getConfig('cookie');
         $expires = new FrozenTime($config['expires']);
@@ -67,22 +71,42 @@ class CookieAuthenticate extends BaseAuthenticate
     }
 
     /**
-     * save login token to users table
+     * save login token to tokens table
      *
      * @param array $user logged in user info
      * @param string $token login token
      * @return EntityInterface|false
      */
-    protected function _saveToken(array $user, $token)
+    protected function saveToken(array $user, $token)
     {
         $fields = $this->getConfig('fields');
-        $userTable = TableRegistry::get($this->getConfig('userModel'));
-        $entity = $userTable->get($user[$userTable->primaryKey()]);
-        $userTable->patchEntity($entity, [
-            $fields['token'] => $this->passwordHasher()->hash($token),
-        ]);
+        $userModel = $this->getConfig('userModel');
+        $userTable = TableRegistry::get($userModel);
+        $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
 
-        return $userTable->save($entity);
+        $entity = null;
+        $id = Hash::get($user, static::$userTokenFieldName . '.id');
+        $expires = new FrozenTime($this->getConfig('cookie.expires'));
+
+        if ($id) {
+            // update token
+            $entity = $tokenTable->get($id);
+            $tokenTable->patchEntity($entity, [
+                'token' => $token,
+                'expires' => $expires,
+            ]);
+        } else {
+            // new token
+            $entity = $tokenTable->newEntity([
+                'table' => $userModel,
+                'foreign_id' => $user[$userTable->getPrimaryKey()],
+                'series' => $this->generateToken($user),
+                'token' => $token,
+                'expires' => $expires,
+            ]);
+        }
+
+        return $tokenTable->save($entity);
     }
 
     /**
@@ -91,7 +115,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param ServerRequest $request a Request instance
      * @return string
      */
-    protected function _getCookie(ServerRequest $request)
+    protected function getCookie(ServerRequest $request)
     {
         return $request->getCookie($this->getConfig('cookie.name'));
     }
@@ -111,23 +135,25 @@ class CookieAuthenticate extends BaseAuthenticate
      * encode cookie
      *
      * @param string $username logged in user name
+     * @param string $series series string
      * @param string $token login token
      * @return string
      */
-    public function encryptToken($username, $token)
+    public function encryptToken($username, $series, $token)
     {
-        return Security::encrypt(json_encode(compact('username', 'token')), Security::salt());
+        return Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::salt());
     }
 
     /**
-     * generate login token
+     * generate token
      *
      * @param array $user logged in user info
      * @return string
      */
-    protected function _generateToken(array $user)
+    protected function generateToken(array $user)
     {
-        $token = Security::hash(serialize(microtime()) . serialize($user));
+        $prefix = bin2hex(Security::randomBytes(16));
+        $token = Security::hash($prefix . serialize($user));
 
         return $token;
     }
@@ -138,14 +164,15 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param ServerRequest $request The request that contains login information.
      * @return bool False if the fields have not been supplied. True if they exist.
      */
-    protected function _checkFields(ServerRequest $request)
+    protected function checkFields(ServerRequest $request)
     {
-        $cookie = $this->_getCookie($request);
+        $cookie = $this->getCookie($request);
         if (empty($cookie) || !is_string($cookie)) {
             return false;
         }
-        $user = $this->decodeCookie($cookie);
-        if (empty($user['username']) || empty($user['token'])) {
+
+        $decoded = $this->decodeCookie($cookie);
+        if (empty($decoded['username']) || empty($decoded['series']) || empty($decoded['token'])) {
             return false;
         }
 
@@ -172,35 +199,121 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function getUser(ServerRequest $request)
     {
-        if (!$this->_checkFields($request)) {
+        if (!$this->checkFields($request)) {
             return false;
         }
-        $user = $this->decodeCookie($this->_getCookie($request));
+        $cookieParams = $this->decodeCookie($this->getCookie($request));
 
-        return $this->_findUser($user['username'], $user['token']);
+        $user = $this->findUserAndTokenBySeries($cookieParams['username'], $cookieParams['series']);
+
+        if (empty($user)) {
+            return false;
+        }
+
+        if (!$this->verifyToken($user, $cookieParams['token'])) {
+            $this->dropToken($user);
+            return false;
+        }
+
+        // remove password field
+        $userArray = Hash::remove($user->toArray(), $this->getConfig('fields.password'));
+        $userArray[static::$userTokenFieldName] = array_intersect_key($userArray['_matchingData']['RememberMeTokens'], [
+            'id' => true,
+            'series' => true,
+        ]);
+        unset($userArray['_matchingData']);
+
+        return $userArray;
     }
 
     /**
-     * find user with username and login token
+     * associate with RememberMeTokens to Users table
+     */
+    protected function initializeUserModel()
+    {
+        $userModel = $this->getConfig('userModel');
+
+        $table = TableRegistry::get($userModel);
+        if (!$table->associations()->has('RememberMeTokens')) {
+            $table->hasMany('RememberMeTokens', [
+                'className' => $this->getConfig('tokenStorageModel'),
+                'foreignKey' => 'foreign_id',
+                'conditions' => ['RememberMeTokens.table' => $userModel],
+                'dependent' => true,
+            ]);
+        }
+    }
+
+    /**
+     * find user with username and series
      *
      * @param string $username request username
-     * @param string $password request token
-     * @return array
+     * @param string $series request series
+     * @param string $token request token
+     * @return EntityInterface
      */
-    protected function _findUser($username, $password = null)
+    protected function findUserAndTokenBySeries($username, $series, $token = null)
     {
-        $originalPasswordField = $this->getConfig('fields.password');
-        $this->setConfig('fields.password', $this->getConfig('fields.token'));
+        $this->initializeUserModel();
 
-        $user = parent::_findUser($username, $password);
+        $query = $this->_query($username);
+        $query->matching('RememberMeTokens', function (Query $q) use ($series) {
+            return $q->where(['RememberMeTokens.series' => $series]);
+        });
 
-        $this->setConfig('fields.password', $originalPasswordField);
+        return $query->first();
+    }
 
-        if (is_array($user) && isset($user[$originalPasswordField])) {
-            unset($user[$originalPasswordField]);
+    /**
+     * verify user token, match and expires
+     *
+     * @param EntityInterface $user
+     * @param string $verifyToken
+     * @return bool
+     */
+    protected function verifyToken(EntityInterface $user, $verifyToken)
+    {
+        $token = $this->getTokenFromUserEntity($user);
+
+        if ($token->token !== $verifyToken) {
+            return false;
         }
 
-        return $user;
+        if (FrozenTime::now()->gt($token->expires)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * drop invalid token
+     *
+     * @param EntityInterface $user
+     * @return bool
+     */
+    protected function dropToken(EntityInterface $user)
+    {
+        $token = $this->getTokenFromUserEntity($user);
+        $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
+
+        return $tokenTable->delete($token);
+    }
+
+    /**
+     * get token
+     *
+     * @param EntityInterface $user
+     * @return RememberMeToken
+     * @throws InvalidArgumentException
+     */
+    private function getTokenFromUserEntity(EntityInterface $user)
+    {
+        if (empty($user->_matchingData) || empty($user->_matchingData['RememberMeTokens'])) {
+            throw new InvalidArgumentException('user entity has not matching token data.');
+        }
+
+        return $user->_matchingData['RememberMeTokens'];
     }
 
     /**
@@ -228,7 +341,7 @@ class CookieAuthenticate extends BaseAuthenticate
 
         if (!$user) {
             // when authenticate failed, clear cookie token.
-            $authComponent->response = $this->_setCookie($authComponent->response, '');
+            $authComponent->response = $this->setCookie($authComponent->response, '');
 
             return;
         }
@@ -247,15 +360,16 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function setLoginTokenToCookie(Response $response, $user)
     {
-        $token = $this->_generateToken($user);
+        $token = $this->generateToken($user);
 
         // save token
-        $entity = $this->_saveToken($user, $token);
+        $entity = $this->saveToken($user, $token);
 
         if ($entity) {
             // write cookie
-            $username = $entity[$this->getConfig('fields.username')];
-            $response = $this->_setCookie($response, $this->encryptToken($username, $token));
+            $username = $user[$this->getConfig('fields.username')];
+            $cookieToken = $this->encryptToken($username, $entity->series, $entity->token);
+            $response = $this->setCookie($response, $cookieToken);
         }
 
         return $response;
@@ -271,7 +385,7 @@ class CookieAuthenticate extends BaseAuthenticate
     public function onLogout(Event $event, array $user)
     {
         $authComponent = $event->getSubject();
-        $authComponent->response = $this->_setCookie($authComponent->response, '');
+        $authComponent->response = $this->setCookie($authComponent->response, '');
 
         return true;
     }
