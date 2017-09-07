@@ -350,7 +350,18 @@ class CookieAuthenticate extends BaseAuthenticate
         }
 
         if ($this->getConfig('always') || $authComponent->request->getData($this->getConfig('inputKey'))) {
-            $authComponent->response = $this->setLoginTokenToCookie($authComponent->response, $user);
+            // -- set token to cookie & session
+            // save token
+            $token = $this->saveToken($user, $this->generateToken($user));
+
+            if ($token) {
+                // write cookie
+                $authComponent->response = $this->setLoginTokenToCookie($authComponent->response, $user, $token);
+                // set token to user
+                $user[static::$userTokenFieldName] = $token->toArray();
+
+                return $user;
+            }
         }
     }
 
@@ -359,19 +370,15 @@ class CookieAuthenticate extends BaseAuthenticate
      *
      * @param Response $response a Response instance
      * @param array $user logged in user info
+     * @param RememberMeToken $token a Token instance
      * @return Response
      */
-    public function setLoginTokenToCookie(Response $response, $user)
+    protected function setLoginTokenToCookie(Response $response, array $user, RememberMeToken $token)
     {
-        $token = $this->generateToken($user);
-
-        // save token
-        $entity = $this->saveToken($user, $token);
-
-        if ($entity) {
+        if (isset($user[$this->getConfig('fields.username')])) {
             // write cookie
             $username = $user[$this->getConfig('fields.username')];
-            $cookieToken = $this->encryptToken($username, $entity->series, $entity->token);
+            $cookieToken = $this->encryptToken($username, $token->series, $token->token);
             $response = $this->setCookie($response, $cookieToken);
         }
 
@@ -389,6 +396,18 @@ class CookieAuthenticate extends BaseAuthenticate
     {
         $authComponent = $event->getSubject();
         $authComponent->response = $this->setCookie($authComponent->response, '');
+
+        // drop token
+        if (!empty($user[static::$userTokenFieldName])) {
+            $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
+            $token = $tokenTable->find()->where([
+                'id' => $user[static::$userTokenFieldName]['id'],
+            ])->first();
+
+            if ($token) {
+                $tokenTable->delete($token);
+            }
+        }
 
         return true;
     }

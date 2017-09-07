@@ -3,12 +3,15 @@
 namespace RememberMe\Test\TestCase\Auth;
 
 use Cake\Controller\ComponentRegistry;
+use Cake\Controller\Component\AuthComponent;
+use Cake\Event\Event;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\I18n\FrozenTime;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\Utility\Hash;
 use Cake\Utility\Security;
 use RememberMe\Auth\CookieAuthenticate;
 use RememberMe\Model\Table\RememberMeTokensTable;
@@ -245,17 +248,32 @@ class CookieAuthenticateTest extends TestCase
     }
 
     /**
-     * test for setLoginTokenToCookie
+     * test for 'Auth.afterIdentify' event
      */
-    public function testSetLoginTokenToCookie()
+    public function testOnAfterIdentify()
     {
+        // -- prepare
         FrozenTime::setTestNow('2017-08-01 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
-        $response = $this->auth->setLoginTokenToCookie(new Response(), $user);
+        $request = (new ServerRequest)->withData('remember_me', true);
+        $response = (new Response());
 
-        $this->assertNotEmpty($response->getCookie('rememberMe'));
+        $subject = $this->getMockBuilder(AuthComponent::class)
+            ->setConstructorArgs([$this->Collection])
+            ->getMock();
+        $subject->request = $request;
+        $subject->response = $response;
+        $event = new Event('Auth.afterIdentify', $subject);
 
-        $decode = $this->auth->decodeCookie($response->getCookie('rememberMe')['value']);
+        // -- run
+        $result = $this->auth->onAfterIdentify($event, $user);
+
+        // -- assertion
+        $this->assertSame(7, Hash::get($result, 'remember_me_token.id'), 'check override user data');
+
+        $this->assertNotEmpty($subject->response->getCookie('rememberMe'));
+
+        $decode = $this->auth->decodeCookie($subject->response->getCookie('rememberMe')['value']);
         $this->assertSame('foo', $decode['username']);
         $this->assertArrayHasKey('token', $decode);
         $this->assertArrayHasKey('series', $decode);
@@ -273,11 +291,12 @@ class CookieAuthenticateTest extends TestCase
     }
 
     /**
-     * test for setLoginTokenToCookie when token exists
+     * test for 'Auth.afterIdentify' event when token exists
      */
-    public function testSetLoginTokenToCookieWhenTokenExists()
+    public function testOnAfterIdentifyWhenTokenExists()
     {
-        FrozenTime::setTestNow('2017-8-01 12:23:34');
+        // -- prepare
+        FrozenTime::setTestNow('2017-08-01 12:23:34');
         $user = [
             'id' => 1,
             'username' => 'foo',
@@ -285,11 +304,25 @@ class CookieAuthenticateTest extends TestCase
                 'id' => 2,
             ],
         ];
-        $response = $this->auth->setLoginTokenToCookie(new Response(), $user);
+        $request = (new ServerRequest)->withData('remember_me', true);
+        $response = (new Response());
 
-        $this->assertNotEmpty($response->getCookie('rememberMe'));
+        $subject = $this->getMockBuilder(AuthComponent::class)
+            ->setConstructorArgs([$this->Collection])
+            ->getMock();
+        $subject->request = $request;
+        $subject->response = $response;
+        $event = new Event('Auth.afterIdentify', $subject);
 
-        $decode = $this->auth->decodeCookie($response->getCookie('rememberMe')['value']);
+        // -- run
+        $result = $this->auth->onAfterIdentify($event, $user);
+
+        // -- assertion
+        $this->assertSame(2, Hash::get($result, 'remember_me_token.id'), 'check override user data');
+
+        $this->assertNotEmpty($subject->response->getCookie('rememberMe'));
+
+        $decode = $this->auth->decodeCookie($subject->response->getCookie('rememberMe')['value']);
         $this->assertSame('foo', $decode['username']);
         $this->assertArrayHasKey('token', $decode);
         $this->assertArrayHasKey('series', $decode);
@@ -304,5 +337,40 @@ class CookieAuthenticateTest extends TestCase
         $this->assertSame('series_foo_2', $tokens->last()->series);
         $this->assertSame($decode['token'], $tokens->last()->token);
         $this->assertTrue($tokens->last()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
+    }
+
+    /**
+     * test for 'Auth.logout' event
+     */
+    public function testOnLogout()
+    {
+        $user = [
+            'id' => 1,
+            'username' => 'bar',
+            'remember_me_token' => [
+                'id' => 2,
+            ],
+        ];
+
+        // set login cookie
+        $response = (new Response())->withCookie('rememberMe', 'dummy');
+
+        // test logout
+        $subject = $this->getMockBuilder(AuthComponent::class)
+            ->setConstructorArgs([$this->Collection])
+            ->getMock();
+        $subject->response = $response;
+        $event = new Event('Auth.logout', $subject);
+
+        $this->assertTrue($this->auth->onLogout($event, $user));
+
+        $cookie = $subject->response->getCookie('rememberMe');
+        $this->assertEmpty($cookie['value'], 'clear cookie values');
+
+        $tokens = $this->Tokens->find()->where([
+                'model' => 'AuthUsers',
+                'foreign_id' => 1,
+            ])->all();
+        $this->assertCount(1, $tokens, 'drop token');
     }
 }
