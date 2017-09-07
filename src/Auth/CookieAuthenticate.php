@@ -54,132 +54,6 @@ class CookieAuthenticate extends BaseAuthenticate
     }
 
     /**
-     * set login token to cookie
-     *
-     * @param Response $response a Response instance.
-     * @param string $cookie encrypted login token
-     * @return Response
-     */
-    protected function setCookie(Response $response, $cookie)
-    {
-        $config = $this->getConfig('cookie');
-        $expires = new FrozenTime($config['expires']);
-        $config['value'] = $cookie;
-        $config['expire'] = $expires->format('U');
-
-        return $response->withCookie($this->getConfig('cookie.name'), $config);
-    }
-
-    /**
-     * save login token to tokens table
-     *
-     * @param array $user logged in user info
-     * @param string $token login token
-     * @return EntityInterface|false
-     */
-    protected function saveToken(array $user, $token)
-    {
-        $fields = $this->getConfig('fields');
-        $userModel = $this->getConfig('userModel');
-        $userTable = TableRegistry::get($userModel);
-        $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
-
-        $entity = null;
-        $id = Hash::get($user, static::$userTokenFieldName . '.id');
-        $expires = new FrozenTime($this->getConfig('cookie.expires'));
-
-        if ($id) {
-            // update token
-            $entity = $tokenTable->get($id);
-            $tokenTable->patchEntity($entity, [
-                'token' => $token,
-                'expires' => $expires,
-            ]);
-        } else {
-            // new token
-            $entity = $tokenTable->newEntity([
-                'model' => $userModel,
-                'foreign_id' => $user[$userTable->getPrimaryKey()],
-                'series' => $this->generateToken($user),
-                'token' => $token,
-                'expires' => $expires,
-            ]);
-        }
-
-        return $tokenTable->save($entity);
-    }
-
-    /**
-     * get login token form cookie
-     *
-     * @param ServerRequest $request a Request instance
-     * @return string
-     */
-    protected function getCookie(ServerRequest $request)
-    {
-        return $request->getCookie($this->getConfig('cookie.name'));
-    }
-
-    /**
-     * decode cookie
-     *
-     * @param string $cookie from request
-     * @return array
-     */
-    public function decodeCookie($cookie)
-    {
-        return json_decode(Security::decrypt($cookie, Security::salt()), true);
-    }
-
-    /**
-     * encode cookie
-     *
-     * @param string $username logged in user name
-     * @param string $series series string
-     * @param string $token login token
-     * @return string
-     */
-    public function encryptToken($username, $series, $token)
-    {
-        return Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::salt());
-    }
-
-    /**
-     * generate token
-     *
-     * @param array $user logged in user info
-     * @return string
-     */
-    protected function generateToken(array $user)
-    {
-        $prefix = bin2hex(Security::randomBytes(16));
-        $token = Security::hash($prefix . serialize($user));
-
-        return $token;
-    }
-
-    /**
-     * Checks the fields to ensure they are supplied.
-     *
-     * @param ServerRequest $request The request that contains login information.
-     * @return bool False if the fields have not been supplied. True if they exist.
-     */
-    protected function checkFields(ServerRequest $request)
-    {
-        $cookie = $this->getCookie($request);
-        if (empty($cookie) || !is_string($cookie)) {
-            return false;
-        }
-
-        $decoded = $this->decodeCookie($cookie);
-        if (empty($decoded['username']) || empty($decoded['series']) || empty($decoded['token'])) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
      * authenticate
      *
      * @param ServerRequest $request a Request instance
@@ -225,6 +99,132 @@ class CookieAuthenticate extends BaseAuthenticate
         unset($userArray['_matchingData']);
 
         return $userArray;
+    }
+
+    /**
+     * Checks the fields to ensure they are supplied.
+     *
+     * @param ServerRequest $request The request that contains login information.
+     * @return bool False if the fields have not been supplied. True if they exist.
+     */
+    protected function checkFields(ServerRequest $request)
+    {
+        $cookie = $this->getCookie($request);
+        if (empty($cookie) || !is_string($cookie)) {
+            return false;
+        }
+
+        $decoded = $this->decodeCookie($cookie);
+        if (empty($decoded['username']) || empty($decoded['series']) || empty($decoded['token'])) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * get login token form cookie
+     *
+     * @param ServerRequest $request a Request instance
+     * @return string
+     */
+    protected function getCookie(ServerRequest $request)
+    {
+        return $request->getCookie($this->getConfig('cookie.name'));
+    }
+
+    /**
+     * set login token to cookie
+     *
+     * @param Response $response a Response instance.
+     * @param string $cookie encrypted login token
+     * @return Response
+     */
+    protected function setCookie(Response $response, $cookie)
+    {
+        $config = $this->getConfig('cookie');
+        $expires = new FrozenTime($config['expires']);
+        $config['value'] = $cookie;
+        $config['expire'] = $expires->format('U');
+
+        return $response->withCookie($this->getConfig('cookie.name'), $config);
+    }
+
+    /**
+     * decode cookie
+     *
+     * @param string $cookie from request
+     * @return array
+     */
+    public function decodeCookie($cookie)
+    {
+        return json_decode(Security::decrypt($cookie, Security::salt()), true);
+    }
+
+    /**
+     * encode cookie
+     *
+     * @param string $username logged in user name
+     * @param string $series series string
+     * @param string $token login token
+     * @return string
+     */
+    public function encryptToken($username, $series, $token)
+    {
+        return Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::salt());
+    }
+
+    /**
+     * generate token
+     *
+     * @param array $user logged in user info
+     * @return string
+     */
+    protected function generateToken(array $user)
+    {
+        $prefix = bin2hex(Security::randomBytes(16));
+        $token = Security::hash($prefix . serialize($user));
+
+        return $token;
+    }
+
+    /**
+     * save login token to tokens table
+     *
+     * @param array $user logged in user info
+     * @param string $token login token
+     * @return EntityInterface|false
+     */
+    protected function saveToken(array $user, $token)
+    {
+        $fields = $this->getConfig('fields');
+        $userModel = $this->getConfig('userModel');
+        $userTable = TableRegistry::get($userModel);
+        $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
+
+        $entity = null;
+        $id = Hash::get($user, static::$userTokenFieldName . '.id');
+        $expires = new FrozenTime($this->getConfig('cookie.expires'));
+
+        if ($id) {
+            // update token
+            $entity = $tokenTable->get($id);
+            $tokenTable->patchEntity($entity, [
+                'token' => $token,
+                'expires' => $expires,
+            ]);
+        } else {
+            // new token
+            $entity = $tokenTable->newEntity([
+                'model' => $userModel,
+                'foreign_id' => $user[$userTable->getPrimaryKey()],
+                'series' => $this->generateToken($user),
+                'token' => $token,
+                'expires' => $expires,
+            ]);
+        }
+
+        return $tokenTable->save($entity);
     }
 
     /**
@@ -310,7 +310,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @return RememberMeToken
      * @throws InvalidArgumentException
      */
-    private function getTokenFromUserEntity(EntityInterface $user)
+    protected function getTokenFromUserEntity(EntityInterface $user)
     {
         if (empty($user->_matchingData) || empty($user->_matchingData['RememberMeTokens'])) {
             throw new InvalidArgumentException('user entity has not matching token data.');
@@ -318,6 +318,10 @@ class CookieAuthenticate extends BaseAuthenticate
 
         return $user->_matchingData['RememberMeTokens'];
     }
+
+    // =====
+    // Event Hooks
+    // =====
 
     /**
      * @return array
