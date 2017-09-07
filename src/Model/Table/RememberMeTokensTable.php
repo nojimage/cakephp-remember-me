@@ -1,0 +1,94 @@
+<?php
+
+namespace RememberMe\Model\Table;
+
+use Cake\Datasource\EntityInterface;
+use Cake\ORM\Behavior\TimestampBehavior;
+use Cake\ORM\RulesChecker;
+use Cake\ORM\Table;
+use Cake\Validation\Validator;
+use RememberMe\Model\Entity\RememberMeToken;
+
+/**
+ * RememberMeTokens Model
+ *
+ * @method RememberMeToken get($primaryKey, $options = [])
+ * @method RememberMeToken newEntity($data = null, array $options = [])
+ * @method RememberMeToken[] newEntities(array $data, array $options = [])
+ * @method RememberMeToken|bool save(EntityInterface $entity, $options = [])
+ * @method RememberMeToken patchEntity(EntityInterface $entity, array $data, array $options = [])
+ * @method RememberMeToken[] patchEntities($entities, array $data, array $options = [])
+ * @method RememberMeToken findOrCreate($search, callable $callback = null, $options = [])
+ *
+ * @mixin TimestampBehavior
+ */
+class RememberMeTokensTable extends Table
+{
+
+    /**
+     * Initialize method
+     *
+     * @param array $config The configuration for the Table.
+     * @return void
+     */
+    public function initialize(array $config)
+    {
+        parent::initialize($config);
+
+        $this->setTable('remember_me_tokens');
+        $this->setDisplayField('id');
+        $this->setPrimaryKey('id');
+
+        $this->addBehavior('Timestamp');
+    }
+
+    /**
+     * Default validation rules.
+     *
+     * @param Validator $validator Validator instance.
+     * @return Validator
+     */
+    public function validationDefault(Validator $validator)
+    {
+        $validator
+            ->integer('id')
+            ->allowEmpty('id', 'create');
+
+        $validator
+            ->requirePresence('table', 'create')
+            ->notEmpty('table');
+
+        $validator
+            ->requirePresence('foreign_id', 'create')
+            ->notEmpty('foreign_id');
+
+        $validator
+            ->requirePresence('series', 'create')
+            ->notEmpty('series');
+
+        $validator
+            ->requirePresence('token', 'create')
+            ->notEmpty('token');
+
+        $validator
+            ->dateTime('expires')
+            ->requirePresence('expires', 'create')
+            ->notEmpty('expires');
+
+        return $validator;
+    }
+
+    /**
+     * Returns a rules checker object that will be used for validating
+     * application integrity.
+     *
+     * @param RulesChecker $rules The rules object to be modified.
+     * @return RulesChecker
+     */
+    public function buildRules(RulesChecker $rules)
+    {
+        $rules->add($rules->isUnique(['table', 'foreign_id', 'series']));
+
+        return $rules;
+    }
+}
