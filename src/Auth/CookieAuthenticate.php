@@ -3,8 +3,8 @@
 namespace RememberMe\Auth;
 
 use Cake\Auth\BaseAuthenticate;
-use Cake\Controller\Component\AuthComponent;
 use Cake\Controller\ComponentRegistry;
+use Cake\Controller\Component\AuthComponent;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\Event;
 use Cake\Http\Response;
@@ -212,6 +212,7 @@ class CookieAuthenticate extends BaseAuthenticate
 
         if (!$this->verifyToken($user, $cookieParams['token'])) {
             $this->dropToken($user);
+
             return false;
         }
 
@@ -228,6 +229,8 @@ class CookieAuthenticate extends BaseAuthenticate
 
     /**
      * associate with RememberMeTokens to Users table
+     *
+     * @return void
      */
     protected function initializeUserModel()
     {
@@ -267,8 +270,8 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * verify user token, match and expires
      *
-     * @param EntityInterface $user
-     * @param string $verifyToken
+     * @param EntityInterface $user logged in user info
+     * @param string $verifyToken token from cookie
      * @return bool
      */
     protected function verifyToken(EntityInterface $user, $verifyToken)
@@ -289,7 +292,7 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * drop invalid token
      *
-     * @param EntityInterface $user
+     * @param EntityInterface $user logged in user info
      * @return bool
      */
     protected function dropToken(EntityInterface $user)
@@ -303,7 +306,7 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * get token
      *
-     * @param EntityInterface $user
+     * @param EntityInterface $user logged in user info
      * @return RememberMeToken
      * @throws InvalidArgumentException
      */
