@@ -1,4 +1,7 @@
 <?php
+
+use Cake\Core\Plugin;
+
 /**
  * Test suite bootstrap for RememberMe.
  *
@@ -21,4 +24,9 @@ $root = $findRoot(__FILE__);
 unset($findRoot);
 
 chdir($root);
-require $root . '/config/bootstrap.php';
+if (file_exists($root . '/config/bootstrap.php')) {
+    require $root . '/config/bootstrap.php';
+} else {
+    require $root . '/vendor/cakephp/cakephp/tests/bootstrap.php';
+    Plugin::load('RememberMe', ['path' => dirname(dirname(__FILE__)) . DS]);
+}
