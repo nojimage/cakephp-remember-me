@@ -211,7 +211,7 @@ class CookieAuthenticate extends BaseAuthenticate
         }
 
         if (!$this->verifyToken($user, $cookieParams['token'])) {
-            $this->dropToken($user);
+            $this->dropInvalidToken($user);
 
             return false;
         }
@@ -295,7 +295,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param EntityInterface $user logged in user info
      * @return bool
      */
-    protected function dropToken(EntityInterface $user)
+    protected function dropInvalidToken(EntityInterface $user)
     {
         $token = $this->getTokenFromUserEntity($user);
         $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
@@ -398,17 +398,32 @@ class CookieAuthenticate extends BaseAuthenticate
         $authComponent->response = $this->setCookie($authComponent->response, '');
 
         // drop token
-        if (!empty($user[static::$userTokenFieldName])) {
-            $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
-            $token = $tokenTable->find()->where([
+        $this->dropToken($user);
+
+        return true;
+    }
+
+    /**
+     * drop token for logout event
+     *
+     * @param array $user logged in user info
+     * @return bool
+     */
+    protected function dropToken(array $user)
+    {
+        if (empty($user[static::$userTokenFieldName])) {
+            return false;
+        }
+
+        $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
+        $token = $tokenTable->find()->where([
                 'id' => $user[static::$userTokenFieldName]['id'],
             ])->first();
 
-            if ($token) {
-                $tokenTable->delete($token);
-            }
+        if (!$token) {
+            return false;
         }
 
-        return true;
+        return $tokenTable->delete($token);
     }
 }
