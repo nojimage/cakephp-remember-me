@@ -11,7 +11,7 @@ use Cake\ORM\Entity;
  * @property int $id
  * @property FrozenTime $created
  * @property FrozenTime $modified
- * @property string $table
+ * @property string $model
  * @property string $foreign_id
  * @property string $series
  * @property string $token

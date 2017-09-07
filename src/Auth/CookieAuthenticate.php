@@ -98,7 +98,7 @@ class CookieAuthenticate extends BaseAuthenticate
         } else {
             // new token
             $entity = $tokenTable->newEntity([
-                'table' => $userModel,
+                'model' => $userModel,
                 'foreign_id' => $user[$userTable->getPrimaryKey()],
                 'series' => $this->generateToken($user),
                 'token' => $token,
@@ -241,7 +241,7 @@ class CookieAuthenticate extends BaseAuthenticate
             $table->hasMany('RememberMeTokens', [
                 'className' => $this->getConfig('tokenStorageModel'),
                 'foreignKey' => 'foreign_id',
-                'conditions' => ['RememberMeTokens.table' => $userModel],
+                'conditions' => ['RememberMeTokens.model' => $userModel],
                 'dependent' => true,
             ]);
         }

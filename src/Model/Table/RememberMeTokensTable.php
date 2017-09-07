@@ -55,8 +55,8 @@ class RememberMeTokensTable extends Table
             ->allowEmpty('id', 'create');
 
         $validator
-            ->requirePresence('table', 'create')
-            ->notEmpty('table');
+            ->requirePresence('model', 'create')
+            ->notEmpty('model');
 
         $validator
             ->requirePresence('foreign_id', 'create')
@@ -87,7 +87,7 @@ class RememberMeTokensTable extends Table
      */
     public function buildRules(RulesChecker $rules)
     {
-        $rules->add($rules->isUnique(['table', 'foreign_id', 'series']));
+        $rules->add($rules->isUnique(['model', 'foreign_id', 'series']));
 
         return $rules;
     }

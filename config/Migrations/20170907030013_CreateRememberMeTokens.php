@@ -17,7 +17,7 @@ class CreateRememberMeTokens extends AbstractMigration
         $table = $this->table('remember_me_tokens');
         $table->addTimestamps('created', 'modified');
 
-        $table->addColumn('table', 'string', [
+        $table->addColumn('model', 'string', [
             'default' => null,
             'limit' => 64,
             'null' => false,
@@ -43,7 +43,7 @@ class CreateRememberMeTokens extends AbstractMigration
         ]);
 
         $table->addIndex([
-            'table',
+            'model',
             'foreign_id',
             'series',
         ], [

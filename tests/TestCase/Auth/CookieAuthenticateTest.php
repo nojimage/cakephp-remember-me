@@ -176,7 +176,7 @@ class CookieAuthenticateTest extends TestCase
             ]), 'drop series_bar_1 token');
 
         $user2Tokens = $this->Tokens->find()->where([
-                'table' => 'AuthUsers',
+                'model' => 'AuthUsers',
                 'foreign_id' => 2,
             ])->all();
         $this->assertCount(1, $user2Tokens);
@@ -204,7 +204,7 @@ class CookieAuthenticateTest extends TestCase
             ]), 'drop series_bar_1 token');
 
         $user2Tokens = $this->Tokens->find()->where([
-                'table' => 'AuthUsers',
+                'model' => 'AuthUsers',
                 'foreign_id' => 2,
             ])->all();
         $this->assertCount(1, $user2Tokens);
@@ -228,7 +228,7 @@ class CookieAuthenticateTest extends TestCase
         $this->assertFalse($result);
 
         $user2Tokens = $this->Tokens->find()->where([
-                'table' => 'AuthUsers',
+                'model' => 'AuthUsers',
                 'foreign_id' => 2,
             ])->all();
         $this->assertCount(2, $user2Tokens);
@@ -262,7 +262,7 @@ class CookieAuthenticateTest extends TestCase
 
         // saved to table
         $tokens = $this->Tokens->find()->where([
-                'table' => 'AuthUsers',
+                'model' => 'AuthUsers',
                 'foreign_id' => 1,
             ])->all();
         $this->assertCount(3, $tokens);
@@ -296,7 +296,7 @@ class CookieAuthenticateTest extends TestCase
 
         // saved to table
         $tokens = $this->Tokens->find()->where([
-                'table' => 'AuthUsers',
+                'model' => 'AuthUsers',
                 'foreign_id' => 1,
             ])->all();
         $this->assertCount(2, $tokens);
