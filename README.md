@@ -1,6 +1,23 @@
 # RememberMe authentication adapter plugin for CakePHP 3
 
-This library inspired by Barry Jaspan's article "[Improved Persistent Login Cookie Best Practice](http://jaspan.com/improved_persistent_login_cookie_best_practice)", and Gabriel Birke's libray "https://github.com/gbirke/rememberme"
+<p align="center">
+    <a href="LICENSE.txt" target="_blank">
+        <img alt="Software License" src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square">
+    </a>
+    <a href="https://travis-ci.org/nojimage/cakephp-remember-me" target="_blank">
+        <img alt="Build Status" src="https://img.shields.io/travis/nojimage/cakephp-remember-me/master.svg?style=flat-square">
+    </a>
+    <a href="https://codecov.io/gh/nojimage/cakephp-remember-me" target="_blank">
+        <img alt="Codecov" src="https://img.shields.io/codecov/c/github/nojimage/cakephp-remember-me.svg?style=flat-square">
+    </a>
+    <a href="https://packagist.org/packages/nojimage/cakephp-remember-me" target="_blank">
+        <img alt="Latest Stable Version" src="https://img.shields.io/packagist/v/nojimage/cakephp-remember-me.svg?style=flat-square">
+    </a>
+</p>
+
+This plugin provides an authenticate handler that permanent login by cookie. This plugin use method of issuing a token, instead of set to cookie encrypted username/password.
+
+This library inspired by Barry Jaspan's article "[Improved Persistent Login Cookie Best Practice](http://jaspan.com/improved_persistent_login_cookie_best_practice)", and Gabriel Birke's libray "https://github.com/gbirke/rememberme".
 
 ## Installation
 
@@ -34,15 +51,15 @@ public function initialize()
     // ... snip
 
     $this->loadComponent('Auth', [
-        // ... other config
         'authenticate' => [
-            // ... other authenticater config
             'RememberMe.Cookie' => [
                 'userModel' => 'Users',
                 'fields' => ['username' => 'email'],
                 'inputKey' => 'remember_me',
             ],
+            // ... other authenticater config
         ],
+        // ... other auth component config
     ]);
     // ... snip
 }
