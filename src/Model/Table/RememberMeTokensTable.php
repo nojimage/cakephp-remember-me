@@ -3,6 +3,7 @@
 namespace RememberMe\Model\Table;
 
 use Cake\Datasource\EntityInterface;
+use Cake\I18n\FrozenTime;
 use Cake\ORM\Behavior\TimestampBehavior;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -22,7 +23,7 @@ use RememberMe\Model\Entity\RememberMeToken;
  *
  * @mixin TimestampBehavior
  */
-class RememberMeTokensTable extends Table
+class RememberMeTokensTable extends Table implements RememberMeTokensTableInterface
 {
 
     /**
@@ -90,5 +91,27 @@ class RememberMeTokensTable extends Table
         $rules->add($rules->isUnique(['model', 'foreign_id', 'series']));
 
         return $rules;
+    }
+
+    /**
+     * drop expired tokens
+     *
+     * @param string $userModel target user model
+     * @param string $foreignId target user id
+     * @return bool
+     */
+    public function dropExpired($userModel = null, $foreignId = null)
+    {
+        $conditions = [
+            $this->aliasField('expires') . ' <' => FrozenTime::now(),
+        ];
+        if (!is_null($userModel)) {
+            $conditions[$this->aliasField('model')] = $userModel;
+        }
+        if (!is_null($foreignId)) {
+            $conditions[$this->aliasField('foreign_id')] = $foreignId;
+        }
+
+        return $this->deleteAll($conditions);
     }
 }

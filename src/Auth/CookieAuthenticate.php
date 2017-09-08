@@ -41,6 +41,7 @@ class CookieAuthenticate extends BaseAuthenticate
             ],
             'inputKey' => 'remember_me',
             'always' => false,
+            'dropExpiredToken' => true,
             'cookie' => [
                 'name' => 'rememberMe',
                 'expires' => '+30 days',
@@ -358,6 +359,11 @@ class CookieAuthenticate extends BaseAuthenticate
             $authComponent->response = $this->setCookie($authComponent->response, '');
 
             return;
+        }
+
+        if ($this->getConfig('dropExpiredToken')) {
+            // drop expired token
+            $this->getTokensTable()->dropExpired($this->getConfig('userModel'));
         }
 
         if ($this->getConfig('always') || $authComponent->request->getData($this->getConfig('inputKey'))) {

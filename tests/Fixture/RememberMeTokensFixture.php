@@ -54,13 +54,13 @@ class RememberMeTokensFixture extends TestFixture
         ],
         [
             'id' => 2,
-            'created' => '2017-09-01 11:22:33',
-            'modified' => '2017-09-01 11:22:33',
+            'created' => '2017-09-02 11:22:33',
+            'modified' => '2017-09-02 11:22:33',
             'model' => 'AuthUsers',
             'foreign_id' => '1',
             'series' => 'series_foo_2',
             'token' => '',
-            'expires' => '2017-10-01 11:22:33',
+            'expires' => '2017-10-02 11:22:33',
         ],
         [
             'id' => 3,
@@ -74,13 +74,13 @@ class RememberMeTokensFixture extends TestFixture
         ],
         [
             'id' => 4,
-            'created' => '2017-09-01 11:22:33',
-            'modified' => '2017-09-01 11:22:33',
+            'created' => '2017-09-02 11:22:33',
+            'modified' => '2017-09-02 11:22:33',
             'model' => 'AuthUsers',
             'foreign_id' => '2',
             'series' => 'series_bar_2',
             'token' => '',
-            'expires' => '2017-10-01 11:22:33',
+            'expires' => '2017-10-02 11:22:33',
         ],
         [
             'id' => 5,
@@ -94,13 +94,13 @@ class RememberMeTokensFixture extends TestFixture
         ],
         [
             'id' => 6,
-            'created' => '2017-09-01 11:22:33',
-            'modified' => '2017-09-01 11:22:33',
+            'created' => '2017-09-02 11:22:33',
+            'modified' => '2017-09-02 11:22:33',
             'model' => 'AuthUsers',
             'foreign_id' => '3',
             'series' => 'series_boo_2',
             'token' => '',
-            'expires' => '2017-10-01 11:22:33',
+            'expires' => '2017-10-02 11:22:33',
         ],
     ];
 }

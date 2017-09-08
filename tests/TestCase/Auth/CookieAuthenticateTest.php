@@ -342,6 +342,31 @@ class CookieAuthenticateTest extends TestCase
     }
 
     /**
+     * test for 'Auth.afterIdentify' event
+     */
+    public function testDropExporedTokensOnAfterIdentify()
+    {
+        // -- prepare
+        FrozenTime::setTestNow('2017-10-01 12:23:34');
+        $user = ['id' => 1, 'username' => 'foo'];
+        $request = (new ServerRequest)->withData('remember_me', true);
+        $response = (new Response());
+
+        $subject = $this->getMockBuilder(AuthComponent::class)
+            ->setConstructorArgs([$this->Collection])
+            ->getMock();
+        $subject->request = $request;
+        $subject->response = $response;
+        $event = new Event('Auth.afterIdentify', $subject);
+
+        // -- run
+        $result = $this->auth->onAfterIdentify($event, $user);
+
+        // -- assertion
+        $this->assertCount(4, $this->Tokens->find()->all(), 'drop expired token');
+    }
+
+    /**
      * test for 'Auth.logout' event
      */
     public function testOnLogout()

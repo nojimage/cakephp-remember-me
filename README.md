@@ -76,6 +76,18 @@ default: `false`
     ],
 ```
 
+#### `dropExpiredToken`
+
+When this option is set to true, drop expired tokens after authentication identified.
+
+default: `true`
+
+```
+    'RememberMe.Cookie' => [
+        'dropExpiredToken' => false,
+    ],
+```
+
 
 #### `cookie`
 
