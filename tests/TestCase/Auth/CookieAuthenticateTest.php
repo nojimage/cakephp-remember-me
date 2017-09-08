@@ -154,7 +154,9 @@ class CookieAuthenticateTest extends TestCase
                 'series' => 'series_bar_1',
             ],
         ];
-        $this->assertEquals($expected, $result);
+        $expectedArray = Hash::flatten($expected);
+        $resultArray = array_intersect_key(Hash::flatten($result), $expectedArray);
+        $this->assertEquals($expectedArray, $resultArray);
     }
 
     /**

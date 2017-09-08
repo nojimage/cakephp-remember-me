@@ -94,11 +94,6 @@ class CookieAuthenticate extends BaseAuthenticate
 
         // remove password field
         $userArray = Hash::remove($user->toArray(), $this->getConfig('fields.password'));
-        $userArray[static::$userTokenFieldName] = array_intersect_key($userArray['_matchingData']['RememberMeTokens'], [
-            'id' => true,
-            'series' => true,
-        ]);
-        unset($userArray['_matchingData']);
 
         return $userArray;
     }
@@ -255,7 +250,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param string $username request username
      * @param string $series request series
      * @param string $token request token
-     * @return EntityInterface
+     * @return EntityInterface|null
      */
     protected function findUserAndTokenBySeries($username, $series, $token = null)
     {
@@ -266,7 +261,18 @@ class CookieAuthenticate extends BaseAuthenticate
             return $q->where(['RememberMeTokens.series' => $series]);
         });
 
-        return $query->first();
+        $user = $query->first();
+
+        if (!$user) {
+            return null;
+        }
+
+        // change mappging
+        $matchingData = $user->get('_matchingData');
+        $user->set(static::$userTokenFieldName, $matchingData['RememberMeTokens']);
+        $user->unsetProperty('_matchingData');
+
+        return $user;
     }
 
     /**
@@ -313,11 +319,11 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function getTokenFromUserEntity(EntityInterface $user)
     {
-        if (empty($user->_matchingData) || empty($user->_matchingData['RememberMeTokens'])) {
+        if (empty($user->{static::$userTokenFieldName})) {
             throw new InvalidArgumentException('user entity has not matching token data.');
         }
 
-        return $user->_matchingData['RememberMeTokens'];
+        return $user->{static::$userTokenFieldName};
     }
 
     // =====
@@ -416,8 +422,25 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function dropToken(array $user)
     {
-        if (empty($user[static::$userTokenFieldName])) {
+        $token = $this->getTokenFromUserArray($user);
+
+        if (!$token) {
             return false;
+        }
+
+        return $this->getTokensTable()->delete($token);
+    }
+
+    /**
+     * Get token entity from user data array
+     *
+     * @param array $user logged in user info
+     * @return RememberMeToken|null
+     */
+    protected function getTokenFromUserArray(array $user)
+    {
+        if (empty($user[static::$userTokenFieldName])) {
+            return null;
         }
 
         $tokenTable = $this->getTokensTable();
@@ -427,11 +450,7 @@ class CookieAuthenticate extends BaseAuthenticate
             ])
             ->first();
 
-        if (!$token) {
-            return false;
-        }
-
-        return $tokenTable->delete($token);
+        return $token;
     }
 
     /**
