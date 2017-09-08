@@ -10,7 +10,8 @@ sudo: false
 
 env:
   matrix:
-    - DB=mysql db_dsn='mysql://root@0.0.0.0/cakephp_test'
+    - CAKE_VERSION='3.4.*' DB=mysql db_dsn='mysql://root@0.0.0.0/cakephp_test'
+    - CAKE_VERSION='3.5.*' DB=mysql db_dsn='mysql://root@0.0.0.0/cakephp_test'
   global:
     - DEFAULT=1
 
@@ -32,6 +33,7 @@ matrix:
 install:
   - if [ $HHVM != '1' ]; then phpenv config-rm xdebug.ini; fi
   - composer self-update
+  - if [ ! -z ${CAKE_VERSION} ]; then composer require cakephp/cakephp:${CAKE_VERSION}; fi
   - composer install --prefer-dist --no-interaction
 
 before_script:
