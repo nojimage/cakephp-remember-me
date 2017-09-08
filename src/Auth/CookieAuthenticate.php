@@ -11,11 +11,13 @@ use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\I18n\FrozenTime;
 use Cake\ORM\Query;
+use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\Utility\Hash;
 use Cake\Utility\Security;
 use InvalidArgumentException;
 use RememberMe\Model\Entity\RememberMeToken;
+use RememberMe\Model\Table\RememberMeTokensTable;
 
 /**
  * Cookie Authenticate
@@ -197,10 +199,9 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function saveToken(array $user, $token)
     {
-        $fields = $this->getConfig('fields');
         $userModel = $this->getConfig('userModel');
-        $userTable = TableRegistry::get($userModel);
-        $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
+        $userTable = $this->getUsersTable();
+        $tokenTable = $this->getTokensTable();
 
         $entity = null;
         $id = Hash::get($user, static::$userTokenFieldName . '.id');
@@ -236,7 +237,8 @@ class CookieAuthenticate extends BaseAuthenticate
     {
         $userModel = $this->getConfig('userModel');
 
-        $table = TableRegistry::get($userModel);
+        $table = $this->getUsersTable();
+
         if (!$table->associations()->has('RememberMeTokens')) {
             $table->hasMany('RememberMeTokens', [
                 'className' => $this->getConfig('tokenStorageModel'),
@@ -298,9 +300,8 @@ class CookieAuthenticate extends BaseAuthenticate
     protected function dropInvalidToken(EntityInterface $user)
     {
         $token = $this->getTokenFromUserEntity($user);
-        $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
 
-        return $tokenTable->delete($token);
+        return $this->getTokensTable()->delete($token);
     }
 
     /**
@@ -419,15 +420,33 @@ class CookieAuthenticate extends BaseAuthenticate
             return false;
         }
 
-        $tokenTable = TableRegistry::get($this->getConfig('tokenStorageModel'));
-        $token = $tokenTable->find()->where([
+        $tokenTable = $this->getTokensTable();
+        $token = $tokenTable->find()
+            ->where([
                 'id' => $user[static::$userTokenFieldName]['id'],
-            ])->first();
+            ])
+            ->first();
 
         if (!$token) {
             return false;
         }
 
         return $tokenTable->delete($token);
+    }
+
+    /**
+     * @return Table
+     */
+    protected function getUsersTable()
+    {
+        return TableRegistry::get($this->getConfig('userModel'));
+    }
+
+    /**
+     * @return RememberMeTokensTable
+     */
+    protected function getTokensTable()
+    {
+        return TableRegistry::get($this->getConfig('tokenStorageModel'));
     }
 }
