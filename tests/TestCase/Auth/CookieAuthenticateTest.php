@@ -280,16 +280,18 @@ class CookieAuthenticateTest extends TestCase
         $this->assertArrayHasKey('token', $decode);
         $this->assertArrayHasKey('series', $decode);
 
-        // saved to table
+        // check saved data
         $tokens = $this->Tokens->find()->where([
                 'model' => 'AuthUsers',
                 'foreign_id' => 1,
-            ])->all();
+            ])
+            ->orderDesc('modified')
+            ->all();
         $this->assertCount(3, $tokens);
 
-        $this->assertSame($decode['series'], $tokens->last()->series);
-        $this->assertSame($decode['token'], $tokens->last()->token);
-        $this->assertTrue($tokens->last()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
+        $this->assertSame($decode['series'], $tokens->first()->series);
+        $this->assertSame($decode['token'], $tokens->first()->token);
+        $this->assertTrue($tokens->first()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
     }
 
     /**
