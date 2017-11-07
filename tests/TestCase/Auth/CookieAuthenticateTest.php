@@ -15,6 +15,7 @@ use Cake\Utility\Hash;
 use Cake\Utility\Security;
 use RememberMe\Auth\CookieAuthenticate;
 use RememberMe\Model\Table\RememberMeTokensTable;
+use RememberMe\Test\Model\Table\AuthUsersTable;
 
 /**
  * Test case for CookieAuthenticate
@@ -80,7 +81,7 @@ class CookieAuthenticateTest extends TestCase
 
         TableRegistry::clear();
         // set password
-        $this->Users = TableRegistry::get('AuthUsers');
+        $this->Users = TableRegistry::get('AuthUsers', ['className' => AuthUsersTable::class]);
         $this->Users->updateAll(['password' => $password], []);
         // set tokens
         $this->Tokens = TableRegistry::get('RememberMe.RememberMeTokens');
@@ -237,6 +238,36 @@ class CookieAuthenticateTest extends TestCase
                 'foreign_id' => 2,
             ])->all();
         $this->assertCount(2, $user2Tokens);
+    }
+
+    /**
+     * test authenticate with custom finder
+     *
+     * @return void
+     * @link https://github.com/nojimage/cakephp-remember-me/issues/1
+     */
+    public function testAuthenticateWithFinder()
+    {
+        $this->auth->setConfig('finder', 'onlyUsername');
+
+        FrozenTime::setTestNow('2017-09-01 12:23:34');
+        $request = new ServerRequest('posts/index');
+        $cookies = [
+            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'logintoken'),
+        ];
+        $request = $request->withCookieParams($cookies);
+        $result = $this->auth->authenticate($request, $this->response);
+
+        $expected = [
+            'username' => 'bar',
+            'remember_me_token' => [
+                'id' => 3,
+                'series' => 'series_bar_1',
+            ],
+        ];
+        $expectedArray = Hash::flatten($expected);
+        $resultArray = array_intersect_key(Hash::flatten($result), $expectedArray);
+        $this->assertEquals($expectedArray, $resultArray);
     }
 
     /**
