@@ -15,6 +15,7 @@ use Cake\Utility\Hash;
 use Cake\Utility\Security;
 use RememberMe\Auth\CookieAuthenticate;
 use RememberMe\Model\Table\RememberMeTokensTable;
+use RememberMe\Test\Model\Table\AuthUsersTable;
 
 /**
  * Test case for CookieAuthenticate
@@ -80,7 +81,7 @@ class CookieAuthenticateTest extends TestCase
 
         TableRegistry::clear();
         // set password
-        $this->Users = TableRegistry::get('AuthUsers');
+        $this->Users = TableRegistry::get('AuthUsers', ['className' => AuthUsersTable::class]);
         $this->Users->updateAll(['password' => $password], []);
         // set tokens
         $this->Tokens = TableRegistry::get('RememberMe.RememberMeTokens');
@@ -240,6 +241,36 @@ class CookieAuthenticateTest extends TestCase
     }
 
     /**
+     * test authenticate with custom finder
+     *
+     * @return void
+     * @link https://github.com/nojimage/cakephp-remember-me/issues/1
+     */
+    public function testAuthenticateWithFinder()
+    {
+        $this->auth->setConfig('finder', 'onlyUsername');
+
+        FrozenTime::setTestNow('2017-09-01 12:23:34');
+        $request = new ServerRequest('posts/index');
+        $cookies = [
+            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'logintoken'),
+        ];
+        $request = $request->withCookieParams($cookies);
+        $result = $this->auth->authenticate($request, $this->response);
+
+        $expected = [
+            'username' => 'bar',
+            'remember_me_token' => [
+                'id' => 3,
+                'series' => 'series_bar_1',
+            ],
+        ];
+        $expectedArray = Hash::flatten($expected);
+        $resultArray = array_intersect_key(Hash::flatten($result), $expectedArray);
+        $this->assertEquals($expectedArray, $resultArray);
+    }
+
+    /**
      * test for decodeCookie
      */
     public function testDecodeCookie()
@@ -280,16 +311,18 @@ class CookieAuthenticateTest extends TestCase
         $this->assertArrayHasKey('token', $decode);
         $this->assertArrayHasKey('series', $decode);
 
-        // saved to table
+        // check saved data
         $tokens = $this->Tokens->find()->where([
                 'model' => 'AuthUsers',
                 'foreign_id' => 1,
-            ])->all();
+            ])
+            ->orderDesc('modified')
+            ->all();
         $this->assertCount(3, $tokens);
 
-        $this->assertSame($decode['series'], $tokens->last()->series);
-        $this->assertSame($decode['token'], $tokens->last()->token);
-        $this->assertTrue($tokens->last()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
+        $this->assertSame($decode['series'], $tokens->first()->series);
+        $this->assertSame($decode['token'], $tokens->first()->token);
+        $this->assertTrue($tokens->first()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
     }
 
     /**

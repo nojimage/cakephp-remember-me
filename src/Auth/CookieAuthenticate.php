@@ -258,6 +258,11 @@ class CookieAuthenticate extends BaseAuthenticate
         $this->initializeUserModel();
 
         $query = $this->_query($username);
+
+        if (!empty($query->clause('select'))) {
+            $query->select($this->getTokensTable());
+        }
+
         $query->matching('RememberMeTokens', function (Query $q) use ($series) {
             return $q->where(['RememberMeTokens.series' => $series]);
         });
