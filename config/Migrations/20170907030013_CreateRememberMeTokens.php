@@ -38,7 +38,7 @@ class CreateRememberMeTokens extends AbstractMigration
             'null' => false,
         ]);
         $table->addColumn('expires', 'timestamp', [
-            'default' => null,
+            'default' => 'CURRENT_TIMESTAMP',
             'null' => false,
         ]);
 
