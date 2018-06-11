@@ -14,8 +14,8 @@ use Cake\ORM\Query;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\Utility\Hash;
-use Cake\Utility\Security;
 use InvalidArgumentException;
+use RememberMe\Compat\Security;
 use RememberMe\Model\Entity\RememberMeToken;
 use RememberMe\Model\Table\RememberMeTokensTable;
 
@@ -35,7 +35,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function __construct(ComponentRegistry $registry, array $config = [])
     {
-        $this->config([
+        $this->setConfig([
             'fields' => [
                 'username' => 'username',
             ],
@@ -156,7 +156,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function decodeCookie($cookie)
     {
-        return json_decode(Security::decrypt($cookie, Security::salt()), true);
+        return json_decode(Security::decrypt($cookie, Security::getSalt()), true);
     }
 
     /**
@@ -169,7 +169,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function encryptToken($username, $series, $token)
     {
-        return Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::salt());
+        return Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::getSalt());
     }
 
     /**
