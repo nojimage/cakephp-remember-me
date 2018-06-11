@@ -12,8 +12,8 @@ use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Hash;
-use Cake\Utility\Security;
 use RememberMe\Auth\CookieAuthenticate;
+use RememberMe\Compat\Security;
 use RememberMe\Model\Table\RememberMeTokensTable;
 use RememberMe\Test\Model\Table\AuthUsersTable;
 
@@ -88,8 +88,8 @@ class CookieAuthenticateTest extends TestCase
         $this->Tokens->updateAll(['token' => 'logintoken'], []);
 
         $this->response = $this->getMockBuilder(Response::class)->getMock();
-        $this->salt = Security::salt();
-        Security::salt('DYhG93b0qyJfIxfs2guVoUubWwvniR2G0FgaC9mi');
+        $this->salt = Security::getSalt();
+        Security::setSalt('DYhG93b0qyJfIxfs2guVoUubWwvniR2G0FgaC9mi');
     }
 
     /**
@@ -101,7 +101,7 @@ class CookieAuthenticateTest extends TestCase
     {
         unset($this->Users);
         unset($this->Tokens);
-        Security::salt($this->salt);
+        Security::setSalt($this->salt);
         FrozenTime::setTestNow();
         parent::tearDown();
     }
