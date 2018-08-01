@@ -433,4 +433,37 @@ class CookieAuthenticateTest extends TestCase
             ])->all();
         $this->assertCount(1, $tokens, 'drop token');
     }
+
+    /**
+     * test with EncryptedCookieMiddleware
+     */
+    public function testWorkWithEncryptedCookieMiddleware()
+    {
+        if (!class_exists('\Cake\Http\Middleware\EncryptedCookieMiddleware')) {
+            $this->markTestSkipped();
+            return;
+        }
+
+        $middleware = new \Cake\Http\Middleware\EncryptedCookieMiddleware(['rememberMe'], str_repeat('1234abcd', 4));
+        $request = new ServerRequest();
+        $response = new Response();
+
+        $encoded = $this->auth->encryptToken('foo', 'series_foo_1', '123456');
+
+        $response = $response->withCookie('rememberMe', ['value' => $encoded]);
+        $response = $middleware($request, $response, function ($request, $response) {
+            return $response;
+        });
+
+        $request = $request->withCookieCollection($response->getCookieCollection());
+        $decryptRequest = null;
+        /* @var $decryptRequest ServerRequest */
+        $middleware($request, $response, function ($request, $response) use (&$decryptRequest) {
+            $decryptRequest = $request;
+            return $response;
+        });
+
+        $result = $this->auth->decodeCookie($decryptRequest->getCookie('rememberMe'));
+        $this->assertSame(['username' => 'foo', 'series' => 'series_foo_1', 'token' => '123456'], $result);
+    }
 }

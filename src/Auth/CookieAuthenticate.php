@@ -156,7 +156,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function decodeCookie($cookie)
     {
-        return json_decode(Security::decrypt($cookie, Security::getSalt()), true);
+        return json_decode(Security::decrypt(base64_decode($cookie), Security::getSalt()), true);
     }
 
     /**
@@ -169,7 +169,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     public function encryptToken($username, $series, $token)
     {
-        return Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::getSalt());
+        return base64_encode(Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::getSalt()));
     }
 
     /**
