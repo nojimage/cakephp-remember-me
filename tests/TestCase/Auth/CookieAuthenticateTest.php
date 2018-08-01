@@ -441,6 +441,7 @@ class CookieAuthenticateTest extends TestCase
     {
         if (!class_exists('\Cake\Http\Middleware\EncryptedCookieMiddleware')) {
             $this->markTestSkipped();
+
             return;
         }
 
@@ -460,6 +461,7 @@ class CookieAuthenticateTest extends TestCase
         /* @var $decryptRequest ServerRequest */
         $middleware($request, $response, function ($request, $response) use (&$decryptRequest) {
             $decryptRequest = $request;
+
             return $response;
         });
 
