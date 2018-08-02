@@ -286,7 +286,7 @@ class CookieAuthenticateTest extends TestCase
     public function testOnAfterIdentify()
     {
         // -- prepare
-        FrozenTime::setTestNow('2017-08-01 12:23:34');
+        FrozenTime::setTestNow('2017-09-03 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
         $request = (new ServerRequest)->withData('remember_me', true);
         $response = (new Response());
@@ -322,7 +322,7 @@ class CookieAuthenticateTest extends TestCase
 
         $this->assertSame($decode['series'], $tokens->first()->series);
         $this->assertSame($decode['token'], $tokens->first()->token);
-        $this->assertTrue($tokens->first()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
+        $this->assertTrue($tokens->first()->expires->eq(new FrozenTime('2017-10-03 12:23:34')), 'default expires is 30days after');
     }
 
     /**
@@ -432,5 +432,40 @@ class CookieAuthenticateTest extends TestCase
                 'foreign_id' => 1,
             ])->all();
         $this->assertCount(1, $tokens, 'drop token');
+    }
+
+    /**
+     * test with EncryptedCookieMiddleware
+     */
+    public function testWorkWithEncryptedCookieMiddleware()
+    {
+        if (!class_exists('\Cake\Http\Middleware\EncryptedCookieMiddleware')) {
+            $this->markTestSkipped();
+
+            return;
+        }
+
+        $middleware = new \Cake\Http\Middleware\EncryptedCookieMiddleware(['rememberMe'], str_repeat('1234abcd', 4));
+        $request = new ServerRequest();
+        $response = new Response();
+
+        $encoded = $this->auth->encryptToken('foo', 'series_foo_1', '123456');
+
+        $response = $response->withCookie('rememberMe', ['value' => $encoded]);
+        $response = $middleware($request, $response, function ($request, $response) {
+            return $response;
+        });
+
+        $request = $request->withCookieCollection($response->getCookieCollection());
+        $decryptRequest = null;
+        /* @var $decryptRequest ServerRequest */
+        $middleware($request, $response, function ($request, $response) use (&$decryptRequest) {
+            $decryptRequest = $request;
+
+            return $response;
+        });
+
+        $result = $this->auth->decodeCookie($decryptRequest->getCookie('rememberMe'));
+        $this->assertSame(['username' => 'foo', 'series' => 'series_foo_1', 'token' => '123456'], $result);
     }
 }
