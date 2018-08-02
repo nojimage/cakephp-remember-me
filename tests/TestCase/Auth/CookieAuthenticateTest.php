@@ -286,7 +286,7 @@ class CookieAuthenticateTest extends TestCase
     public function testOnAfterIdentify()
     {
         // -- prepare
-        FrozenTime::setTestNow('2017-08-01 12:23:34');
+        FrozenTime::setTestNow('2017-09-03 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
         $request = (new ServerRequest)->withData('remember_me', true);
         $response = (new Response());
@@ -322,7 +322,7 @@ class CookieAuthenticateTest extends TestCase
 
         $this->assertSame($decode['series'], $tokens->first()->series);
         $this->assertSame($decode['token'], $tokens->first()->token);
-        $this->assertTrue($tokens->first()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
+        $this->assertTrue($tokens->first()->expires->eq(new FrozenTime('2017-10-03 12:23:34')), 'default expires is 30days after');
     }
 
     /**
