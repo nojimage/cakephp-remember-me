@@ -413,7 +413,9 @@ class CookieAuthenticateTest extends TestCase
         ];
 
         // set login cookie
+        error_reporting(E_ALL ^ E_USER_DEPRECATED);
         $response = (new Response())->withCookie('rememberMe', 'dummy');
+        error_reporting(E_ALL);
 
         // test logout
         $subject = $this->getMockBuilder(AuthComponent::class)
@@ -451,7 +453,9 @@ class CookieAuthenticateTest extends TestCase
 
         $encoded = $this->auth->encryptToken('foo', 'series_foo_1', '123456');
 
+        error_reporting(E_ALL ^ E_USER_DEPRECATED);
         $response = $response->withCookie('rememberMe', ['value' => $encoded]);
+        error_reporting(E_ALL);
         $response = $middleware($request, $response, function ($request, $response) {
             return $response;
         });

@@ -7,6 +7,7 @@ use Cake\Controller\ComponentRegistry;
 use Cake\Controller\Component\AuthComponent;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\Event;
+use Cake\Http\Cookie\Cookie;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\I18n\FrozenTime;
@@ -142,6 +143,20 @@ class CookieAuthenticate extends BaseAuthenticate
     {
         $config = $this->getConfig('cookie');
         $expires = new FrozenTime($config['expires']);
+        if (class_exists(Cookie::class)) {
+            $cookieObj = new Cookie(
+                $this->getConfig('cookie.name'),
+                $cookie,
+                $expires,
+                $this->getConfig('cookie.path', '/'),
+                $this->getConfig('cookie.domain', ''),
+                $this->getConfig('cookie.secure', true),
+                $this->getConfig('cookie.httpOnly', true)
+            );
+
+            return $response->withCookie($cookieObj);
+        }
+
         $config['value'] = $cookie;
         $config['expire'] = $expires->format('U');
 

@@ -29,7 +29,13 @@ The recommended way to install composer packages is:
 composer require nojimage/cakephp-remember-me
 ```
 
-You will need to add the following line to your application's bootstrap.php file:
+(CakePHP >= 3.6.0) Load the plugin by adding the following statement in your project's `src/Application.php`:
+
+```
+$this->addPlugin('RememberMe');
+```
+
+(CakePHP <= 3.5.x) Load the plugin by adding the following statement in your project's `config/bootstrap.php` file:
 
 ```
 Plugin::load('RememberMe');

@@ -3,7 +3,6 @@ language: php
 
 php:
   - 5.6
-  - 7.0
   - 7.1
   - 7.2
 
@@ -14,6 +13,7 @@ env:
     - CAKE_VERSION='3.4.*' DB=mysql db_dsn='mysql://root@0.0.0.0/cakephp_test'
     - CAKE_VERSION='3.5.*' DB=mysql db_dsn='mysql://root@0.0.0.0/cakephp_test'
     - CAKE_VERSION='3.6.*' DB=mysql db_dsn='mysql://root@0.0.0.0/cakephp_test'
+    - CAKE_VERSION='3.7.*' DB=mysql db_dsn='mysql://root@0.0.0.0/cakephp_test'
   global:
     - DEFAULT=1
 
