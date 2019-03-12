@@ -80,6 +80,7 @@ default: `'remember_me'`
     ],
 ```
 
+
 #### `always`
 
 このオプションをtrueに設定すると、ログインCookieは認証が識別された後、常に発行されます。
@@ -104,17 +105,6 @@ default: `true`
     ],
 ```
 
-#### `setAuthUser`
-
-このオプションをtrueに設定すると、Cookieでの認証時にAuthComponentでユーザー情報をセッションにセットします。
-
-default: `true`
-
-```
-    'RememberMe.Cookie' => [
-        'setAuthUser' => false,
-    ],
-```
 
 #### `cookie`
 
@@ -136,6 +126,7 @@ default: `true`
     ],
 ```
 
+
 #### `tokenStorageModel`
 
 ログインCookieトークンを格納するために使用されるモデル。
@@ -147,5 +138,6 @@ default: `'RememberMe.RememberMeTokens'`
         'tokenStorageModel' => 'YourTokensModel',
     ],
 ```
+
 
 その他の設定オプションについてはこちらを確認してください: https://book.cakephp.org/3.0/ja/controllers/components/authentication.html#configuring-authentication-handlers
