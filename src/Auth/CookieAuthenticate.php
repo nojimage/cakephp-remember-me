@@ -45,6 +45,7 @@ class CookieAuthenticate extends BaseAuthenticate
             'inputKey' => 'remember_me',
             'always' => false,
             'dropExpiredToken' => true,
+            'setAuthUser' => true,
             'cookie' => [
                 'name' => 'rememberMe',
                 'expires' => '+30 days',
@@ -98,6 +99,11 @@ class CookieAuthenticate extends BaseAuthenticate
 
         // remove password field
         $userArray = Hash::remove($user->toArray(), $this->getConfig('fields.password'));
+
+        // set to session
+        if ($this->getConfig('setAuthUser') && $this->_registry->Auth) {
+            $this->_registry->Auth->setUser($userArray);
+        }
 
         return $userArray;
     }

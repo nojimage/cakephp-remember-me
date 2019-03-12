@@ -4,6 +4,7 @@ namespace RememberMe\Test\TestCase\Auth;
 
 use Cake\Controller\ComponentRegistry;
 use Cake\Controller\Component\AuthComponent;
+use Cake\Controller\Controller;
 use Cake\Event\Event;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
@@ -73,7 +74,9 @@ class CookieAuthenticateTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->Collection = $this->getMockBuilder(ComponentRegistry::class)->getMock();
+        $this->Collection = new ComponentRegistry(new Controller());
+        $this->Collection->load('Auth');
+
         $this->auth = new CookieAuthenticate($this->Collection, [
             'userModel' => 'AuthUsers'
         ]);
@@ -158,6 +161,11 @@ class CookieAuthenticateTest extends TestCase
         $expectedArray = Hash::flatten($expected);
         $resultArray = array_intersect_key(Hash::flatten($result), $expectedArray);
         $this->assertEquals($expectedArray, $resultArray);
+
+        // set with session
+        $sessionUser = $this->Collection->Auth->user();
+        $sessionUserArray = array_intersect_key(Hash::flatten($sessionUser), $expectedArray);
+        $this->assertEquals($expectedArray, $sessionUserArray);
     }
 
     /**
