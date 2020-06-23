@@ -22,7 +22,6 @@ use RememberMe\Test\Model\Table\AuthUsersTable;
  */
 class CookieAuthenticateTest extends TestCase
 {
-
     /**
      * Fixtures
      *
@@ -75,7 +74,7 @@ class CookieAuthenticateTest extends TestCase
         parent::setUp();
         $this->Collection = $this->getMockBuilder(ComponentRegistry::class)->getMock();
         $this->auth = new CookieAuthenticate($this->Collection, [
-            'userModel' => 'AuthUsers'
+            'userModel' => 'AuthUsers',
         ]);
         $password = password_hash('password', PASSWORD_DEFAULT);
 
@@ -115,7 +114,7 @@ class CookieAuthenticateTest extends TestCase
     {
         $object = new CookieAuthenticate($this->Collection, [
             'userModel' => 'AuthUsers',
-            'fields' => ['username' => 'user']
+            'fields' => ['username' => 'user'],
         ]);
         $this->assertEquals('AuthUsers', $object->getConfig('userModel'));
         $this->assertEquals(['username' => 'user', 'password' => 'password'], $object->getConfig('fields'));
@@ -178,13 +177,13 @@ class CookieAuthenticateTest extends TestCase
         $this->assertFalse($result);
 
         $this->assertFalse($this->Tokens->exists([
-                'series' => 'series_bar_1',
-            ]), 'drop series_bar_1 token');
+            'series' => 'series_bar_1',
+        ]), 'drop series_bar_1 token');
 
         $user2Tokens = $this->Tokens->find()->where([
-                'model' => 'AuthUsers',
-                'foreign_id' => 2,
-            ])->all();
+            'model' => 'AuthUsers',
+            'foreign_id' => 2,
+        ])->all();
         $this->assertCount(1, $user2Tokens);
     }
 
@@ -206,13 +205,13 @@ class CookieAuthenticateTest extends TestCase
         $this->assertFalse($result);
 
         $this->assertFalse($this->Tokens->exists([
-                'series' => 'series_bar_1',
-            ]), 'drop series_bar_1 token');
+            'series' => 'series_bar_1',
+        ]), 'drop series_bar_1 token');
 
         $user2Tokens = $this->Tokens->find()->where([
-                'model' => 'AuthUsers',
-                'foreign_id' => 2,
-            ])->all();
+            'model' => 'AuthUsers',
+            'foreign_id' => 2,
+        ])->all();
         $this->assertCount(1, $user2Tokens);
     }
 
@@ -234,9 +233,9 @@ class CookieAuthenticateTest extends TestCase
         $this->assertFalse($result);
 
         $user2Tokens = $this->Tokens->find()->where([
-                'model' => 'AuthUsers',
-                'foreign_id' => 2,
-            ])->all();
+            'model' => 'AuthUsers',
+            'foreign_id' => 2,
+        ])->all();
         $this->assertCount(2, $user2Tokens);
     }
 
@@ -288,7 +287,7 @@ class CookieAuthenticateTest extends TestCase
         // -- prepare
         FrozenTime::setTestNow('2017-09-03 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
-        $request = (new ServerRequest)->withData('remember_me', true);
+        $request = (new ServerRequest())->withData('remember_me', true);
         $response = (new Response());
 
         $subject = $this->getMockBuilder(AuthComponent::class)
@@ -313,9 +312,9 @@ class CookieAuthenticateTest extends TestCase
 
         // check saved data
         $tokens = $this->Tokens->find()->where([
-                'model' => 'AuthUsers',
-                'foreign_id' => 1,
-            ])
+            'model' => 'AuthUsers',
+            'foreign_id' => 1,
+        ])
             ->orderDesc('modified')
             ->all();
         $this->assertCount(3, $tokens);
@@ -339,7 +338,7 @@ class CookieAuthenticateTest extends TestCase
                 'id' => 2,
             ],
         ];
-        $request = (new ServerRequest)->withData('remember_me', true);
+        $request = (new ServerRequest())->withData('remember_me', true);
         $response = (new Response());
 
         $subject = $this->getMockBuilder(AuthComponent::class)
@@ -364,9 +363,9 @@ class CookieAuthenticateTest extends TestCase
 
         // saved to table
         $tokens = $this->Tokens->find()->where([
-                'model' => 'AuthUsers',
-                'foreign_id' => 1,
-            ])->all();
+            'model' => 'AuthUsers',
+            'foreign_id' => 1,
+        ])->all();
         $this->assertCount(2, $tokens);
 
         $this->assertSame('series_foo_2', $tokens->last()->series);
@@ -382,7 +381,7 @@ class CookieAuthenticateTest extends TestCase
         // -- prepare
         FrozenTime::setTestNow('2017-10-01 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
-        $request = (new ServerRequest)->withData('remember_me', true);
+        $request = (new ServerRequest())->withData('remember_me', true);
         $response = (new Response());
 
         $subject = $this->getMockBuilder(AuthComponent::class)
@@ -430,9 +429,9 @@ class CookieAuthenticateTest extends TestCase
         $this->assertEmpty($cookie['value'], 'clear cookie values');
 
         $tokens = $this->Tokens->find()->where([
-                'model' => 'AuthUsers',
-                'foreign_id' => 1,
-            ])->all();
+            'model' => 'AuthUsers',
+            'foreign_id' => 1,
+        ])->all();
         $this->assertCount(1, $tokens, 'drop token');
     }
 
