@@ -4,12 +4,7 @@ namespace RememberMe\Resolver;
 
 use Authentication\Identifier\Resolver\OrmResolver;
 
-/**
- * Class TokenSeriesResolver
- *
- * find user by username and token series
- */
-class TokenSeriesResolver extends OrmResolver
+class TokenSeriesResolver extends OrmResolver implements TokenSeriesResolverInterface
 {
     /**
      * @inheritDoc
@@ -53,5 +48,21 @@ class TokenSeriesResolver extends OrmResolver
         if (!$table->hasBehavior('WithRememberMeTokenBySeries')) {
             $table->addBehavior('RememberMe.WithRememberMeTokenBySeries', $this->getConfig());
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getUserTokenFieldName()
+    {
+        return $this->getConfig('userTokenFieldName');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getTokenStorage()
+    {
+        return $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
     }
 }
