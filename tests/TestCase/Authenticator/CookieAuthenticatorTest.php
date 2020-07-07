@@ -11,6 +11,7 @@ use Cake\Http\Response;
 use Cake\Http\ServerRequestFactory;
 use Cake\I18n\FrozenTime;
 use Cake\ORM\Entity;
+use Cake\ORM\TableRegistry;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RememberMe\Authenticator\CookieAuthenticator;
@@ -27,7 +28,7 @@ class CookieAuthenticatorTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->Tokens = $this->getTableLocator()->get('RememberMe.RememberMeTokens');
+        $this->Tokens = TableRegistry::getTableLocator()->get('RememberMe.RememberMeTokens');
     }
 
     /**
