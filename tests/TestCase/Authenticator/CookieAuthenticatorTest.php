@@ -10,6 +10,7 @@ use Cake\Http\Cookie\Cookie;
 use Cake\Http\Response;
 use Cake\Http\ServerRequestFactory;
 use Cake\I18n\FrozenTime;
+use Cake\ORM\Entity;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RememberMe\Authenticator\CookieAuthenticator;
@@ -215,7 +216,6 @@ class CookieAuthenticatorTest extends TestCase
         // for set _successfulIdentifier
         $this->assertNotNull($identifiers->identify(['username' => 'foo', 'password' => '12345678']));
 
-        //
         $request = ServerRequestFactory::fromGlobals(
             ['REQUEST_URI' => '/testpath']
         );
@@ -223,13 +223,13 @@ class CookieAuthenticatorTest extends TestCase
             'remember_me' => 1,
         ]);
         $response = new Response();
-
-        $authenticator = new CookieAuthenticator($identifiers);
-
         $identity = new ArrayObject([
             'id' => 1,
             'username' => 'foo',
         ]);
+
+        $authenticator = new CookieAuthenticator($identifiers);
+
         $result = $authenticator->persistIdentity($request, $response, $identity);
 
         $this->assertInternalType('array', $result);
@@ -264,6 +264,43 @@ class CookieAuthenticatorTest extends TestCase
         ]);
         $result = $authenticator->persistIdentity($request, $response, $identity);
         $this->assertContains('rememberMe=', $result['response']->getHeaderLine('Set-Cookie'));
+    }
+
+    /**
+     * @return void
+     */
+    public function testDropExpiredTokenOnPersistIdentity()
+    {
+        $identifiers = new IdentifierCollection(['Authentication.Password']);
+        $request = ServerRequestFactory::fromGlobals(
+            ['REQUEST_URI' => '/testpath']
+        );
+        $request = $request->withParsedBody([
+            'remember_me' => 1,
+        ]);
+        $response = new Response();
+        $identity = new Entity([
+            'id' => 1,
+            'username' => 'foo',
+        ]);
+        $identity->setSource('AuthUsers');
+
+        $this->assertCount(6, $this->Tokens->find()->all());
+
+        $authenticator = new CookieAuthenticator($identifiers);
+
+        $result = $authenticator->persistIdentity($request, $response, $identity);
+
+        $this->assertInternalType('array', $result);
+        $this->assertArrayHasKey('request', $result);
+        $this->assertArrayHasKey('response', $result);
+        $this->assertInstanceOf(RequestInterface::class, $result['request']);
+        $this->assertInstanceOf(ResponseInterface::class, $result['response']);
+
+        $cookieHeader = $result['response']->getHeaderLine('Set-Cookie');
+        $this->assertContains('rememberMe=', $cookieHeader);
+
+        $this->assertCount(1, $this->Tokens->find()->all(), 'then deleted expired tokens');
     }
 
     public function testClearIdentity()

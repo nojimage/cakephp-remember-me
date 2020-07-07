@@ -23,6 +23,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use RememberMe\Compat\Security;
 use RememberMe\Identifier\RememberMeTokenIdentifier;
 use RememberMe\Model\Entity\RememberMeToken;
+use RememberMe\Model\Table\RememberMeTokensTableInterface;
 use RuntimeException;
 
 /**
@@ -209,7 +210,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     }
 
     /**
-     * @return RepositoryInterface
+     * @return RepositoryInterface|RememberMeTokensTableInterface
      */
     protected function _getTokenStorageModel()
     {
@@ -285,6 +286,11 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
 
         $userTable = $this->getTableLocator()->get($userModel);
         $tokenTable = $this->_getTokenStorageModel();
+
+        if ($this->getConfig('dropExpiredToken')) {
+            // drop expired token
+            $tokenTable->dropExpired($userModel);
+        }
 
         $entity = null;
         $id = Hash::get($identity, $this->getConfig('userTokenFieldName') . '.id');
