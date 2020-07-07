@@ -50,7 +50,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         ],
         'cookie' => [
             'name' => 'rememberMe',
-            'expires' => '+30 days',
+            'expire' => '+30 days',
             'path' => '/',
             'domain' => '',
             'secure' => true,
@@ -61,6 +61,21 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         'always' => false,
         'dropExpiredToken' => true,
     ];
+
+    /**
+     * the constructor.
+     *
+     * @param IdentifierInterface $identifier Identifier or identifiers collection.
+     * @param array $config Configuration settings.
+     */
+    public function __construct(IdentifierInterface $identifier, array $config = [])
+    {
+        if (Hash::check($config, 'cookie.expires')) {
+            $config['cookie']['expire'] = $config['cookie']['expires'];
+            unset($config['cookie']['expires']);
+        }
+        parent::__construct($identifier, $config);
+    }
 
     /**
      * {@inheritDoc}
@@ -273,7 +288,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
 
         $entity = null;
         $id = Hash::get($identity, $this->getConfig('userTokenFieldName') . '.id');
-        $expires = new FrozenTime($this->getConfig('cookie.expires'));
+        $expires = new FrozenTime($this->getConfig('cookie.expire'));
 
         if ($id) {
             // update token
