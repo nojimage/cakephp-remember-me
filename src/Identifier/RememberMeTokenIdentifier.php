@@ -67,14 +67,14 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      */
     public function identify(array $credentials)
     {
-        if (!isset(
-            $credentials[self::CREDENTIAL_USERNAME],
-            $credentials[self::CREDENTIAL_SERIES]
-        )) {
+        if (!isset($credentials[self::CREDENTIAL_USERNAME], $credentials[self::CREDENTIAL_SERIES])) {
             return null;
         }
 
-        $identity = $this->_findIdentity($credentials[self::CREDENTIAL_USERNAME], $credentials[self::CREDENTIAL_SERIES]);
+        $identity = $this->_findIdentity(
+            $credentials[self::CREDENTIAL_USERNAME],
+            $credentials[self::CREDENTIAL_SERIES]
+        );
 
         if ($identity === null) {
             return null;

@@ -4,6 +4,9 @@ namespace RememberMe\Identifier\Resolver;
 
 use Authentication\Identifier\Resolver\OrmResolver;
 
+/**
+ * Class TokenSeriesResolver
+ */
 class TokenSeriesResolver extends OrmResolver implements TokenSeriesResolverInterface
 {
     /**
