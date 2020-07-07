@@ -6,16 +6,16 @@ services:
 
 php:
   - 5.6
-  - 7.1
   - 7.2
   - 7.3
+  - 7.4
 
 sudo: false
 
 env:
   matrix:
-    - CAKE_VERSION='3.7.*'
     - CAKE_VERSION='3.8.*'
+    - CAKE_VERSION='3.9.*'
   global:
     - DEFAULT=1 DB=mysql db_dsn='mysql://root@0.0.0.0/cakephp_test'
 
@@ -40,6 +40,10 @@ matrix:
     env: CAKE_VERSION='3.6.*'
   - php: 7.2
     env: CAKE_VERSION='3.6.*'
+  - php: 5.6
+    env: CAKE_VERSION='3.7.*'
+  - php: 7.3
+    env: CAKE_VERSION='3.7.*'
 
   - php: 7.3
     env: PHPCS=1 DEFAULT=0
@@ -55,7 +59,7 @@ install:
 
 before_script:
   - if [ $DB = 'mysql' ]; then mysql -u root -e 'CREATE DATABASE cakephp_test;'; fi
-  - if [ $PHPCS = '1' ]; then composer require cakephp/cakephp-codesniffer:dev-master; fi
+  - if [ $PHPCS = '1' ]; then composer require cakephp/cakephp-codesniffer:^3.0; fi
 
 script:
   - if [ $DEFAULT = '1' ]; then vendor/bin/phpunit --stderr; fi

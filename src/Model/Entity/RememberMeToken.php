@@ -19,7 +19,6 @@ use Cake\ORM\Entity;
  */
 class RememberMeToken extends Entity
 {
-
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
      *
@@ -31,7 +30,7 @@ class RememberMeToken extends Entity
      */
     protected $_accessible = [
         '*' => true,
-        'id' => false
+        'id' => false,
     ];
 
     /**
@@ -40,6 +39,6 @@ class RememberMeToken extends Entity
      * @var array
      */
     protected $_hidden = [
-        'token'
+        'token',
     ];
 }
