@@ -1,10 +1,9 @@
 <?php
 
-namespace RememberMe\Test\TestCase\Resolver;
+namespace RememberMe\Test\TestCase\Identifier\Resolver;
 
 use Cake\Datasource\EntityInterface;
-use RememberMe\Model\Table\RememberMeTokensTable;
-use RememberMe\Resolver\TokenSeriesResolver;
+use RememberMe\Identifier\Resolver\TokenSeriesResolver;
 use RememberMe\Test\TestCase\RememberMeTestCase as TestCase;
 
 /**
@@ -81,13 +80,5 @@ class TokenSeriesResolverTest extends TestCase
     public function testGetUserTokenFieldName()
     {
         $this->assertSame('remember_me_token', $this->resolver->getUserTokenFieldName());
-    }
-
-    /**
-     * @return void
-     */
-    public function testGetTokenStorage()
-    {
-        $this->assertInstanceOf(RememberMeTokensTable::class, $this->resolver->getTokenStorage());
     }
 }

@@ -16,6 +16,7 @@ class WithRememberMeTokenBySeriesBehavior extends Behavior
     protected $_defaultConfig = [
         'tokenStorageModel' => 'RememberMe.RememberMeTokens',
         'userTokenFieldName' => 'remember_me_token',
+        'userModel' => 'Users',
     ];
 
     /**

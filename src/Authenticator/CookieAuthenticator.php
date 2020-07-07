@@ -1,0 +1,335 @@
+<?php
+
+namespace RememberMe\Authenticator;
+
+use ArrayAccess;
+use Authentication\Authenticator\AbstractAuthenticator;
+use Authentication\Authenticator\PersistenceInterface;
+use Authentication\Authenticator\Result;
+use Authentication\Identifier\IdentifierCollection;
+use Authentication\Identifier\IdentifierInterface;
+use Authentication\UrlChecker\UrlCheckerTrait;
+use Cake\Datasource\EntityInterface;
+use Cake\Datasource\RepositoryInterface;
+use Cake\Http\Cookie\Cookie;
+use Cake\Http\Cookie\CookieInterface;
+use Cake\I18n\FrozenTime;
+use Cake\ORM\Exception\PersistenceFailedException;
+use Cake\ORM\Locator\LocatorAwareTrait;
+use Cake\Utility\Hash;
+use InvalidArgumentException;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use RememberMe\Compat\Security;
+use RememberMe\Identifier\RememberMeTokenIdentifier;
+use RememberMe\Model\Entity\RememberMeToken;
+use RuntimeException;
+
+/**
+ * Class CookieAuthenticator
+ *
+ * This authenticator use method of issuing a token, instead of set to cookie encrypted username/password.
+ *
+ * @mmethod RememberMeTokenIdentifier|IdentifierCollection getIdentifier()
+ */
+class CookieAuthenticator extends AbstractAuthenticator implements PersistenceInterface
+{
+    use EncryptCookieTrait;
+    use LocatorAwareTrait;
+    use UrlCheckerTrait;
+
+    /**
+     * {@inheritDoc}
+     */
+    protected $_defaultConfig = [
+        'loginUrl' => null,
+        'urlChecker' => 'Authentication.Default',
+        'rememberMeField' => 'remember_me',
+        'fields' => [
+            IdentifierInterface::CREDENTIAL_USERNAME => 'username',
+        ],
+        'cookie' => [
+            'name' => 'rememberMe',
+            'expires' => '+30 days',
+            'path' => '/',
+            'domain' => '',
+            'secure' => true,
+            'httpOnly' => true,
+        ],
+        'tokenStorageModel' => 'RememberMe.RememberMeTokens',
+        'userTokenFieldName' => 'remember_me_token',
+        'always' => false,
+        'dropExpiredToken' => true,
+    ];
+
+    /**
+     * {@inheritDoc}
+     */
+    public function authenticate(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $cookie = $this->_getCookie($request);
+
+        if ($cookie === null) {
+            return new Result(null, Result::FAILURE_CREDENTIALS_MISSING, [
+                'Login credentials not found',
+            ]);
+        }
+
+        try {
+            $credentials = static::decodeCookie($cookie);
+        } catch (InvalidArgumentException $e) {
+            return new Result(null, Result::FAILURE_CREDENTIALS_INVALID, [
+                'Cookie token is invalid',
+                $e->getMessage(),
+            ]);
+        }
+
+        if (!isset($credentials['username'], $credentials['series'], $credentials['token'])) {
+            return new Result(null, Result::FAILURE_CREDENTIALS_INVALID, [
+                'Cookie token is invalid',
+            ]);
+        }
+
+        $identity = $this->_identifier->identify($credentials);
+
+        if (empty($identity)) {
+            return new Result(null, Result::FAILURE_IDENTITY_NOT_FOUND, $this->_identifier->getErrors());
+        }
+
+        if (!$this->_verifyToken($identity, $credentials['token'])) {
+            $this->_dropInvalidToken($identity);
+
+            return new Result(null, Result::FAILURE_CREDENTIALS_INVALID, [
+                'Cookie token does not match',
+            ]);
+        }
+
+        return new Result($identity, Result::SUCCESS);
+    }
+
+    /**
+     * get login token form cookie
+     *
+     * @param ServerRequestInterface $request a Request instance
+     * @return string|null
+     */
+    protected function _getCookie(ServerRequestInterface $request)
+    {
+        $cookies = $request->getCookieParams();
+        $cookieName = $this->getConfig('cookie.name');
+
+        return isset($cookies[$cookieName]) ? $cookies[$cookieName] : null;
+    }
+
+    /**
+     * verify user token, match and expires
+     *
+     * @param ArrayAccess|array $identity the user info
+     * @param string $verifyToken token from cookie
+     * @return bool
+     */
+    protected function _verifyToken($identity, $verifyToken)
+    {
+        $token = $this->_getTokenFromIdentifier($identity);
+
+        if ($token['token'] !== $verifyToken) {
+            return false;
+        }
+
+        if (FrozenTime::now()->gt($token['expires'])) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @return IdentifierInterface
+     */
+    protected function _getSuccessfulIdentifier()
+    {
+        $identifier = $this->getIdentifier();
+        if ($identifier instanceof IdentifierCollection) {
+            $identifier = $identifier->getIdentificationProvider();
+        }
+
+        return $identifier;
+    }
+
+    /**
+     * get token from identifier
+     *
+     * @param ArrayAccess|array $identity the user info
+     * @return RememberMeToken
+     * @throws InvalidArgumentException
+     */
+    protected function _getTokenFromIdentifier($identity)
+    {
+        $identifier = $this->_getSuccessfulIdentifier();
+
+        if (!$identifier instanceof RememberMeTokenIdentifier) {
+            throw new RuntimeException('IdentificationProvider must be RememberMeTokenIdentifier or an inherited class.');
+        }
+
+        $tokenField = $identifier->getResolver()->getUserTokenFieldName();
+
+        if (!isset($identity[$tokenField])) {
+            throw new InvalidArgumentException('identity has not matching token data.');
+        }
+
+        return $identity[$tokenField];
+    }
+
+    /**
+     * drop invalid token
+     *
+     * @param ArrayAccess|array $identity the user info
+     * @return bool
+     */
+    protected function _dropInvalidToken($identity)
+    {
+        $token = $this->_getTokenFromIdentifier($identity);
+
+        return $this->_getTokenStorageModel()->delete($token);
+    }
+
+    /**
+     * @return RepositoryInterface
+     */
+    protected function _getTokenStorageModel()
+    {
+        return $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function persistIdentity(ServerRequestInterface $request, ResponseInterface $response, $identity)
+    {
+        $field = $this->getConfig('rememberMeField');
+        $bodyData = $request->getParsedBody();
+
+        if (
+            !$this->_checkUrl($request)
+            || (
+                !$this->getConfig('always')
+                && (!is_array($bodyData) || empty($bodyData[$field]))
+            )
+        ) {
+            return [
+                'request' => $request,
+                'response' => $response,
+            ];
+        }
+        $token = $this->_saveToken($identity, $this->_generateToken($identity));
+        $encryptedToken = static::encryptToken(
+            $identity[$this->getConfig('fields.' . IdentifierInterface::CREDENTIAL_USERNAME)],
+            $token->series,
+            $token->token
+        );
+        $cookie = $this->_createCookie($encryptedToken, $token->expires);
+
+        return [
+            'request' => $request,
+            'response' => $response->withAddedHeader('Set-Cookie', $cookie->toHeaderValue()),
+        ];
+    }
+
+    /**
+     * generate token
+     *
+     * @param ArrayAccess|array $identity logged in user info
+     * @return string
+     */
+    protected function _generateToken($identity)
+    {
+        $prefix = bin2hex(Security::randomBytes(16));
+
+        return Security::hash($prefix . serialize($identity));
+    }
+
+    /**
+     * save login token to tokens table
+     *
+     * @param ArrayAccess|array $identity logged in user info
+     * @param string $token login token
+     * @return EntityInterface
+     * @throws PersistenceFailedException
+     */
+    protected function _saveToken($identity, $token)
+    {
+        $userModel = null;
+        if ($identity instanceof EntityInterface) {
+            $userModel = $identity->getSource();
+        } elseif ($identifier = $this->_getSuccessfulIdentifier()) {
+            $userModel = $identifier->getResolver()->getConfig('userModel');
+        }
+        if ($userModel === null) {
+            throw new InvalidArgumentException('Can\'t detect user model');
+        }
+
+        $userTable = $this->getTableLocator()->get($userModel);
+        $tokenTable = $this->_getTokenStorageModel();
+
+        $entity = null;
+        $id = Hash::get($identity, $this->getConfig('userTokenFieldName') . '.id');
+        $expires = new FrozenTime($this->getConfig('cookie.expires'));
+
+        if ($id) {
+            // update token
+            $entity = $tokenTable->get($id);
+            $tokenTable->patchEntity($entity, [
+                'token' => $token,
+                'expires' => $expires,
+            ]);
+        } else {
+            // new token
+            $entity = $tokenTable->newEntity([
+                'model' => $userModel,
+                'foreign_id' => $identity[$userTable->getPrimaryKey()],
+                'series' => $this->_generateToken($identity),
+                'token' => $token,
+                'expires' => $expires,
+            ]);
+        }
+
+        return $tokenTable->saveOrFail($entity);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function clearIdentity(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $cookie = $this->_createCookie(null)->withExpired();
+
+        return [
+            'request' => $request,
+            'response' => $response->withAddedHeader('Set-Cookie', $cookie->toHeaderValue()),
+        ];
+    }
+
+    /**
+     * Creates a cookie instance with configured defaults.
+     *
+     * @param mixed $value Cookie value.
+     * @param FrozenTime|null $expires the Cookie expire
+     * @return CookieInterface
+     */
+    protected function _createCookie($value, FrozenTime $expires = null)
+    {
+        $data = $this->getConfig('cookie');
+
+        $cookie = new Cookie(
+            $data['name'],
+            $value,
+            $expires,
+            $data['path'],
+            $data['domain'],
+            $data['secure'],
+            $data['httpOnly']
+        );
+
+        return $cookie;
+    }
+}

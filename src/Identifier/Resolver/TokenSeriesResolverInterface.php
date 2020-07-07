@@ -1,9 +1,8 @@
 <?php
 
-namespace RememberMe\Resolver;
+namespace RememberMe\Identifier\Resolver;
 
 use Authentication\Identifier\Resolver\ResolverInterface;
-use Cake\Datasource\RepositoryInterface;
 
 /**
  * TokenSeriesResolver Interface
@@ -16,9 +15,4 @@ interface TokenSeriesResolverInterface extends ResolverInterface
      * @return string
      */
     public function getUserTokenFieldName();
-
-    /**
-     * @return RepositoryInterface
-     */
-    public function getTokenStorage();
 }

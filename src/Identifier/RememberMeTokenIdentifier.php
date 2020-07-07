@@ -6,10 +6,7 @@ use ArrayAccess;
 use Authentication\Identifier\AbstractIdentifier;
 use Authentication\Identifier\Resolver\ResolverAwareTrait;
 use Authentication\Identifier\Resolver\ResolverInterface;
-use Cake\I18n\FrozenTime;
-use InvalidArgumentException;
-use RememberMe\Model\Entity\RememberMeToken;
-use RememberMe\Resolver\TokenSeriesResolverInterface;
+use RememberMe\Identifier\Resolver\TokenSeriesResolverInterface;
 use RuntimeException;
 
 /**
@@ -50,6 +47,13 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      */
     protected function buildResolver($config)
     {
+        if (is_string($config)) {
+            $config = ['className' => $config];
+        }
+        if (!isset($config['userModel']) && $this->getConfig('userModel')) {
+            $config['userModel'] = $this->getConfig('userModel');
+        }
+
         $instance = $this->traitBuildResolver($config);
 
         if (!($instance instanceof TokenSeriesResolverInterface)) {
@@ -79,12 +83,6 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
             return null;
         }
 
-        if (!$this->_verifyToken($identity, $credentials[self::CREDENTIAL_TOKEN])) {
-            $this->_dropInvalidToken($identity);
-
-            return null;
-        }
-
         return $identity;
     }
 
@@ -104,58 +102,5 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
         }
 
         return $this->getResolver()->find($conditions, ResolverInterface::TYPE_OR);
-    }
-
-    /**
-     * verify user token, match and expires
-     *
-     * @param ArrayAccess|array $identifier the user info
-     * @param string $verifyToken token from cookie
-     * @return bool
-     */
-    protected function _verifyToken($identifier, $verifyToken)
-    {
-        $token = $this->_getTokenFromIdentifier($identifier);
-
-        if ($token['token'] !== $verifyToken) {
-            return false;
-        }
-
-        if (FrozenTime::now()->gt($token['expires'])) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * get token from identifier
-     *
-     * @param ArrayAccess|array $identifier the user info
-     * @return RememberMeToken|ArrayAccess|array
-     * @throws InvalidArgumentException
-     */
-    protected function _getTokenFromIdentifier($identifier)
-    {
-        $tokenField = $this->getResolver()->getUserTokenFieldName();
-
-        if (!isset($identifier[$tokenField])) {
-            throw new InvalidArgumentException('user entity has not matching token data.');
-        }
-
-        return $identifier[$tokenField];
-    }
-
-    /**
-     * drop invalid token
-     *
-     * @param ArrayAccess|array $identifier the user info
-     * @return bool
-     */
-    protected function _dropInvalidToken($identifier)
-    {
-        $token = $this->_getTokenFromIdentifier($identifier);
-
-        return $this->getResolver()->getTokenStorage()->delete($token);
     }
 }

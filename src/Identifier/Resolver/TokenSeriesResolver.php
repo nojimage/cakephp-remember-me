@@ -1,6 +1,6 @@
 <?php
 
-namespace RememberMe\Resolver;
+namespace RememberMe\Identifier\Resolver;
 
 use Authentication\Identifier\Resolver\OrmResolver;
 
@@ -46,7 +46,11 @@ class TokenSeriesResolver extends OrmResolver implements TokenSeriesResolverInte
     {
         $table = $this->getTableLocator()->get($this->getConfig('userModel'));
         if (!$table->hasBehavior('WithRememberMeTokenBySeries')) {
-            $table->addBehavior('RememberMe.WithRememberMeTokenBySeries', $this->getConfig());
+            $table->addBehavior('RememberMe.WithRememberMeTokenBySeries', [
+                'tokenStorageModel' => $this->getConfig('tokenStorageModel'),
+                'userTokenFieldName' => $this->getConfig('userTokenFieldName'),
+                'userModel' => $this->getConfig('userModel'),
+            ]);
         }
     }
 
@@ -56,13 +60,5 @@ class TokenSeriesResolver extends OrmResolver implements TokenSeriesResolverInte
     public function getUserTokenFieldName()
     {
         return $this->getConfig('userTokenFieldName');
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getTokenStorage()
-    {
-        return $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
     }
 }
