@@ -2,7 +2,6 @@
 
 namespace RememberMe\Test\TestCase\Authenticator;
 
-use ArrayObject;
 use Authentication\Authenticator\Result;
 use Authentication\Identifier\IdentifierCollection;
 use Cake\Datasource\EntityInterface;
@@ -207,15 +206,8 @@ class CookieAuthenticatorTest extends TestCase
     public function testPersistIdentity()
     {
         $identifiers = new IdentifierCollection([
-            'Authentication.Password' => [
-                'resolver' => [
-                    'className' => 'Authentication.Orm',
-                    'userModel' => 'AuthUsers',
-                ],
-            ],
+            'Authentication.Password',
         ]);
-        // for set _successfulIdentifier
-        $this->assertNotNull($identifiers->identify(['username' => 'foo', 'password' => '12345678']));
 
         $request = ServerRequestFactory::fromGlobals(
             ['REQUEST_URI' => '/testpath']
@@ -224,10 +216,11 @@ class CookieAuthenticatorTest extends TestCase
             'remember_me' => 1,
         ]);
         $response = new Response();
-        $identity = new ArrayObject([
+        $identity = new Entity([
             'id' => 1,
             'username' => 'foo',
         ]);
+        $identity->setSource('AuthUsers');
 
         $authenticator = new CookieAuthenticator($identifiers);
 

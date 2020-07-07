@@ -21,10 +21,8 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use RememberMe\Compat\Security;
-use RememberMe\Identifier\RememberMeTokenIdentifier;
 use RememberMe\Model\Entity\RememberMeToken;
 use RememberMe\Model\Table\RememberMeTokensTableInterface;
-use RuntimeException;
 
 /**
  * Class CookieAuthenticator
@@ -166,7 +164,9 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     {
         $identifier = $this->getIdentifier();
         if ($identifier instanceof IdentifierCollection) {
-            $identifier = $identifier->getIdentificationProvider();
+            $identifier = method_exists($identifier, 'getIdentificationProvider')
+                ? $identifier->getIdentificationProvider()
+                : null;
         }
 
         return $identifier;
@@ -181,13 +181,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
      */
     protected function _getTokenFromIdentifier($identity)
     {
-        $identifier = $this->_getSuccessfulIdentifier();
-
-        if (!$identifier instanceof RememberMeTokenIdentifier) {
-            throw new RuntimeException('IdentificationProvider must be RememberMeTokenIdentifier or an inherited class.');
-        }
-
-        $tokenField = $identifier->getResolver()->getUserTokenFieldName();
+        $tokenField = $this->getConfig('userTokenFieldName');
 
         if (!isset($identity[$tokenField])) {
             throw new InvalidArgumentException('identity has not matching token data.');
