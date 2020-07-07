@@ -27,7 +27,6 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      * - `fields` The fields to use to identify a user by:
      *   - `username`: one or many username fields.
      *   - `series`: series field.
-     *   - `token`: token field.
      * - `resolver` The resolver implementation to use. the class must be
      *   TokenSeriesResolver or the inherited class.
      *
@@ -37,7 +36,6 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
         'fields' => [
             self::CREDENTIAL_USERNAME => 'username',
             self::CREDENTIAL_SERIES => 'series',
-            self::CREDENTIAL_TOKEN => 'token',
         ],
         'resolver' => 'RememberMe.TokenSeries',
     ];
@@ -71,8 +69,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     {
         if (!isset(
             $credentials[self::CREDENTIAL_USERNAME],
-            $credentials[self::CREDENTIAL_SERIES],
-            $credentials[self::CREDENTIAL_TOKEN]
+            $credentials[self::CREDENTIAL_SERIES]
         )) {
             return null;
         }
