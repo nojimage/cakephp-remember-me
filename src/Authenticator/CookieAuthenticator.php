@@ -51,6 +51,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             'secure' => true,
             'httpOnly' => true,
         ],
+        'identityAttribute' => 'identity',
         'tokenStorageModel' => 'RememberMe.RememberMeTokens',
         'always' => false,
         'dropExpiredToken' => true,
@@ -216,6 +217,27 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
      */
     public function clearIdentity(ServerRequestInterface $request, ResponseInterface $response)
     {
+        // drop token
+        $cookie = $this->_getCookie($request);
+        try {
+            $credentials = static::decodeCookie($cookie);
+        } catch (InvalidArgumentException $e) {
+            // nothing to do
+        }
+        $identity = $request->getAttribute($this->getConfig('identityAttribute'));
+        if (isset($credentials['series']) && $identity instanceof EntityInterface && !empty($identity->getSource())) {
+            $userModel = $identity->getSource();
+            $userTable = $this->getTableLocator()->get($userModel);
+            $tokenTable = $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
+            $conditions = [
+                'model' => $userModel,
+                'foreign_id' => $identity[$userTable->getPrimaryKey()],
+                'series' => $credentials['series'],
+            ];
+            $tokenTable->deleteAll($conditions);
+        }
+
+        // clear cookie
         $cookie = $this->_createCookie(null)->withExpired();
 
         return [

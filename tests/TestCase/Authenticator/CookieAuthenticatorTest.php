@@ -333,12 +333,7 @@ class CookieAuthenticatorTest extends TestCase
     public function testClearIdentity()
     {
         $identifiers = new IdentifierCollection([
-            'RememberMe.RememberMeToken' => [
-                'resolver' => [
-                    'className' => 'Authentication.Orm',
-                    'userModel' => 'AuthUsers',
-                ],
-            ],
+            'RememberMe.RememberMeToken',
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
@@ -355,5 +350,43 @@ class CookieAuthenticatorTest extends TestCase
 
         // Send http header that clear cookie.
         $this->assertEquals('rememberMe=; expires=Thu, 01-Jan-1970 00:00:01 UTC; path=/; secure; httponly', $result['response']->getHeaderLine('Set-Cookie'));
+    }
+
+    /**
+     * @return void
+     */
+    public function testClearIdentityWithCookie()
+    {
+        $identifiers = new IdentifierCollection([
+            'RememberMe.RememberMeToken',
+        ]);
+
+        $request = ServerRequestFactory::fromGlobals(
+            ['REQUEST_URI' => '/testpath']
+        );
+        $response = new Response();
+
+        $identity = new Entity([
+            'id' => 1,
+            'username' => 'foo',
+        ]);
+        $identity->setSource('AuthUsers');
+        $request = $request
+            ->withCookieParams([
+                'rememberMe' => CookieAuthenticator::encryptToken('foo', 'series_foo_1', 'logintoken1'),
+            ])
+            ->withAttribute('identity', $identity);
+
+        $this->assertTrue($this->Tokens->exists(['model' => 'AuthUsers', 'foreign_id' => 1, 'series' => 'series_foo_1']));
+
+        $authenticator = new CookieAuthenticator($identifiers);
+
+        $result = $authenticator->clearIdentity($request, $response);
+        $this->assertInternalType('array', $result);
+        $this->assertInstanceOf(RequestInterface::class, $result['request']);
+        $this->assertInstanceOf(ResponseInterface::class, $result['response']);
+
+        // Will deleted login token
+        $this->assertFalse($this->Tokens->exists(['model' => 'AuthUsers', 'foreign_id' => 1, 'series' => 'series_foo_1']));
     }
 }
