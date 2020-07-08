@@ -10,7 +10,6 @@ use Authentication\Identifier\IdentifierCollection;
 use Authentication\Identifier\IdentifierInterface;
 use Authentication\UrlChecker\UrlCheckerTrait;
 use Cake\Datasource\EntityInterface;
-use Cake\Datasource\RepositoryInterface;
 use Cake\Http\Cookie\Cookie;
 use Cake\Http\Cookie\CookieInterface;
 use Cake\I18n\FrozenTime;
@@ -20,7 +19,6 @@ use Cake\Utility\Hash;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use RememberMe\Model\Table\RememberMeTokensTableInterface;
 
 /**
  * Class CookieAuthenticator
@@ -179,7 +177,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         }
 
         $userTable = $this->getTableLocator()->get($userModel);
-        $tokenTable = $this->_getTokenStorageModel();
+        $tokenTable = $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
 
         if ($this->getConfig('dropExpiredToken')) {
             // drop expired token
@@ -211,14 +209,6 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         }
 
         return $identifier;
-    }
-
-    /**
-     * @return RepositoryInterface|RememberMeTokensTableInterface
-     */
-    protected function _getTokenStorageModel()
-    {
-        return $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
     }
 
     /**
