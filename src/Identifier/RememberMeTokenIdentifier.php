@@ -50,13 +50,6 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      */
     protected function buildResolver($config)
     {
-        if (is_string($config)) {
-            $config = ['className' => $config];
-        }
-        if (!isset($config['userModel']) && $this->getConfig('userModel')) {
-            $config['userModel'] = $this->getConfig('userModel');
-        }
-
         $instance = $this->traitBuildResolver($config);
 
         if (!($instance instanceof OrmResolver)) {

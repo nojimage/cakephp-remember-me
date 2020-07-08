@@ -46,7 +46,12 @@ class CookieAuthenticatorTest extends TestCase
     public function testAuthenticateCredentialsNotPresent()
     {
         $identifiers = new IdentifierCollection([
-            'RememberMe.RememberMeToken' => ['userModel' => 'AuthUsers'],
+            'RememberMe.RememberMeToken' => [
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'AuthUsers',
+                ],
+            ],
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
@@ -67,7 +72,12 @@ class CookieAuthenticatorTest extends TestCase
     public function testAuthenticateEmptyCookie()
     {
         $identifiers = new IdentifierCollection([
-            'RememberMe.RememberMeToken' => ['userModel' => 'AuthUsers'],
+            'RememberMe.RememberMeToken' => [
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'AuthUsers',
+                ],
+            ],
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
@@ -93,7 +103,12 @@ class CookieAuthenticatorTest extends TestCase
     public function testAuthenticateUnencryptedCookie()
     {
         $identifiers = new IdentifierCollection([
-            'RememberMe.RememberMeToken' => ['userModel' => 'AuthUsers'],
+            'RememberMe.RememberMeToken' => [
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'AuthUsers',
+                ],
+            ],
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
@@ -120,7 +135,12 @@ class CookieAuthenticatorTest extends TestCase
     public function testAuthenticateInvalidCookie()
     {
         $identifiers = new IdentifierCollection([
-            'RememberMe.RememberMeToken' => ['userModel' => 'AuthUsers'],
+            'RememberMe.RememberMeToken' => [
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'AuthUsers',
+                ],
+            ],
         ]);
 
         $encryptedToken = CookieAuthenticator::encryptToken('foo', 'series_foo_1', 'logintoken2');
@@ -149,7 +169,12 @@ class CookieAuthenticatorTest extends TestCase
     {
         FrozenTime::setTestNow('2017-10-01 11:22:34');
         $identifiers = new IdentifierCollection([
-            'RememberMe.RememberMeToken' => ['userModel' => 'AuthUsers'],
+            'RememberMe.RememberMeToken' => [
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'AuthUsers',
+                ],
+            ],
         ]);
 
         $encryptedToken = CookieAuthenticator::encryptToken('foo', 'series_foo_1', 'logintoken1');
@@ -178,7 +203,12 @@ class CookieAuthenticatorTest extends TestCase
     {
         FrozenTime::setTestNow('2017-10-01 11:22:33');
         $identifiers = new IdentifierCollection([
-            'RememberMe.RememberMeToken' => ['userModel' => 'AuthUsers'],
+            'RememberMe.RememberMeToken' => [
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'AuthUsers',
+                ],
+            ],
         ]);
 
         $encryptedToken = CookieAuthenticator::encryptToken('foo', 'series_foo_1', 'logintoken1');
@@ -302,7 +332,12 @@ class CookieAuthenticatorTest extends TestCase
     public function testClearIdentity()
     {
         $identifiers = new IdentifierCollection([
-            'RememberMe.RememberMeToken' => ['userModel' => 'AuthUsers'],
+            'RememberMe.RememberMeToken' => [
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'AuthUsers',
+                ],
+            ],
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
