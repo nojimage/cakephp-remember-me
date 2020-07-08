@@ -20,7 +20,6 @@ use Cake\Utility\Hash;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use RememberMe\Compat\Security;
 use RememberMe\Model\Table\RememberMeTokensTableInterface;
 
 /**
@@ -145,7 +144,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
                 'response' => $response,
             ];
         }
-        $token = $this->_saveToken($identity, $this->_generateToken($identity));
+        $token = $this->_saveToken($identity, static::_generateToken($identity));
         $encryptedToken = static::encryptToken(
             $identity[$this->getConfig('fields.' . IdentifierInterface::CREDENTIAL_USERNAME)],
             $token['series'],
@@ -157,19 +156,6 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             'request' => $request,
             'response' => $response->withAddedHeader('Set-Cookie', $cookie->toHeaderValue()),
         ];
-    }
-
-    /**
-     * generate token
-     *
-     * @param ArrayAccess|array $identity logged in user info
-     * @return string
-     */
-    protected function _generateToken($identity)
-    {
-        $prefix = bin2hex(Security::randomBytes(16));
-
-        return Security::hash($prefix . serialize($identity));
     }
 
     /**
@@ -204,7 +190,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $entity = $tokenTable->newEntity([
             'model' => $userModel,
             'foreign_id' => $identity[$userTable->getPrimaryKey()],
-            'series' => $this->_generateToken($identity),
+            'series' => static::_generateToken($identity),
             'token' => $token,
             'expires' => new FrozenTime($this->getConfig('cookie.expire')),
         ]);

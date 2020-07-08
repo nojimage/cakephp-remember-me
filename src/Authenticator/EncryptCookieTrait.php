@@ -2,6 +2,7 @@
 
 namespace RememberMe\Authenticator;
 
+use ArrayAccess;
 use InvalidArgumentException;
 use RememberMe\Compat\Security;
 
@@ -33,5 +34,18 @@ trait EncryptCookieTrait
     public static function encryptToken($username, $series, $token)
     {
         return base64_encode(Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::getSalt()));
+    }
+
+    /**
+     * generate token
+     *
+     * @param ArrayAccess|array $identity logged in user info
+     * @return string
+     */
+    protected static function _generateToken($identity)
+    {
+        $prefix = bin2hex(Security::randomBytes(16));
+
+        return Security::hash($prefix . serialize($identity));
     }
 }
