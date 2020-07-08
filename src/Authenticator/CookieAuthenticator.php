@@ -243,27 +243,14 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             $tokenTable->dropExpired($userModel);
         }
 
-        $entity = null;
-        $id = Hash::get($identity, $this->getConfig('userTokenFieldName') . '.id');
-        $expires = new FrozenTime($this->getConfig('cookie.expire'));
-
-        if ($id) {
-            // update token
-            $entity = $tokenTable->get($id);
-            $tokenTable->patchEntity($entity, [
-                'token' => $token,
-                'expires' => $expires,
-            ]);
-        } else {
-            // new token
-            $entity = $tokenTable->newEntity([
-                'model' => $userModel,
-                'foreign_id' => $identity[$userTable->getPrimaryKey()],
-                'series' => $this->_generateToken($identity),
-                'token' => $token,
-                'expires' => $expires,
-            ]);
-        }
+        // create token entity
+        $entity = $tokenTable->newEntity([
+            'model' => $userModel,
+            'foreign_id' => $identity[$userTable->getPrimaryKey()],
+            'series' => $this->_generateToken($identity),
+            'token' => $token,
+            'expires' => new FrozenTime($this->getConfig('cookie.expire')),
+        ]);
 
         return $tokenTable->saveOrFail($entity);
     }
