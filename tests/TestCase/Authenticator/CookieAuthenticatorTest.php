@@ -318,8 +318,6 @@ class CookieAuthenticatorTest extends TestCase
         $result = $authenticator->persistIdentity($request, $response, $identity);
 
         $this->assertInternalType('array', $result);
-        $this->assertArrayHasKey('request', $result);
-        $this->assertArrayHasKey('response', $result);
         $this->assertInstanceOf(RequestInterface::class, $result['request']);
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
@@ -329,6 +327,9 @@ class CookieAuthenticatorTest extends TestCase
         $this->assertCount(1, $this->Tokens->find()->all(), 'then deleted expired tokens');
     }
 
+    /**
+     * @return void
+     */
     public function testClearIdentity()
     {
         $identifiers = new IdentifierCollection([
@@ -349,11 +350,10 @@ class CookieAuthenticatorTest extends TestCase
 
         $result = $authenticator->clearIdentity($request, $response);
         $this->assertInternalType('array', $result);
-        $this->assertArrayHasKey('request', $result);
-        $this->assertArrayHasKey('response', $result);
         $this->assertInstanceOf(RequestInterface::class, $result['request']);
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
+        // Send http header that clear cookie.
         $this->assertEquals('rememberMe=; expires=Thu, 01-Jan-1970 00:00:01 UTC; path=/; secure; httponly', $result['response']->getHeaderLine('Set-Cookie'));
     }
 }
