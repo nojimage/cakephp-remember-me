@@ -133,8 +133,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $field = $this->getConfig('rememberMeField');
         $bodyData = $request->getParsedBody();
 
-        if (
-            !$this->_checkUrl($request)
+        if (!$this->_checkUrl($request)
             || (
                 !$this->getConfig('always')
                 && (!is_array($bodyData) || empty($bodyData[$field]))

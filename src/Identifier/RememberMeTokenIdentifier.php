@@ -46,7 +46,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     ];
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function buildResolver($config)
     {
@@ -65,8 +65,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      */
     public function identify(array $credentials)
     {
-        if (
-        !isset(
+        if (!isset(
             $credentials[self::CREDENTIAL_USERNAME],
             $credentials[self::CREDENTIAL_SERIES],
             $credentials[self::CREDENTIAL_TOKEN]
