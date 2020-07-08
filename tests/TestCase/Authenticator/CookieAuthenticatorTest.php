@@ -14,6 +14,7 @@ use Cake\ORM\TableRegistry;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RememberMe\Authenticator\CookieAuthenticator;
+use RememberMe\Model\Entity\RememberMeToken;
 use RememberMe\Model\Table\RememberMeTokensTable;
 use RememberMe\Test\TestCase\RememberMeTestCase as TestCase;
 
@@ -197,7 +198,7 @@ class CookieAuthenticatorTest extends TestCase
         $this->assertInstanceOf(Result::class, $result);
         $this->assertEquals(Result::SUCCESS, $result->getStatus());
         $this->assertInstanceOf(EntityInterface::class, $result->getData());
-        $this->assertSame('foo', $result->getData()->username);
+        $this->assertSame('foo', $result->getData()['username']);
     }
 
     /**
@@ -233,6 +234,7 @@ class CookieAuthenticatorTest extends TestCase
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
         $token = $this->Tokens->find()->orderDesc('id')->first();
+        /* @var $token RememberMeToken */
         $this->assertSame('AuthUsers', $token->model);
         $this->assertSame('1', $token->foreign_id);
 

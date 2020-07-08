@@ -21,7 +21,6 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use RememberMe\Compat\Security;
-use RememberMe\Model\Entity\RememberMeToken;
 use RememberMe\Model\Table\RememberMeTokensTableInterface;
 
 /**
@@ -56,7 +55,6 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             'httpOnly' => true,
         ],
         'tokenStorageModel' => 'RememberMe.RememberMeTokens',
-        'userTokenFieldName' => 'remember_me_token',
         'always' => false,
         'dropExpiredToken' => true,
     ];
@@ -128,47 +126,6 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     }
 
     /**
-     * @return IdentifierInterface
-     */
-    protected function _getSuccessfulIdentifier()
-    {
-        $identifier = $this->getIdentifier();
-        if ($identifier instanceof IdentifierCollection) {
-            $identifier = method_exists($identifier, 'getIdentificationProvider')
-                ? $identifier->getIdentificationProvider()
-                : null;
-        }
-
-        return $identifier;
-    }
-
-    /**
-     * get token from identifier
-     *
-     * @param ArrayAccess|array $identity the user info
-     * @return RememberMeToken
-     * @throws InvalidArgumentException
-     */
-    protected function _getTokenFromIdentifier($identity)
-    {
-        $tokenField = $this->getConfig('userTokenFieldName');
-
-        if (!isset($identity[$tokenField])) {
-            throw new InvalidArgumentException('identity has not matching token data.');
-        }
-
-        return $identity[$tokenField];
-    }
-
-    /**
-     * @return RepositoryInterface|RememberMeTokensTableInterface
-     */
-    protected function _getTokenStorageModel()
-    {
-        return $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
-    }
-
-    /**
      * {@inheritDoc}
      */
     public function persistIdentity(ServerRequestInterface $request, ResponseInterface $response, $identity)
@@ -191,10 +148,10 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $token = $this->_saveToken($identity, $this->_generateToken($identity));
         $encryptedToken = static::encryptToken(
             $identity[$this->getConfig('fields.' . IdentifierInterface::CREDENTIAL_USERNAME)],
-            $token->series,
-            $token->token
+            $token['series'],
+            $token['token']
         );
-        $cookie = $this->_createCookie($encryptedToken, $token->expires);
+        $cookie = $this->_createCookie($encryptedToken, $token['expires']);
 
         return [
             'request' => $request,
@@ -256,6 +213,29 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     }
 
     /**
+     * @return IdentifierInterface
+     */
+    protected function _getSuccessfulIdentifier()
+    {
+        $identifier = $this->getIdentifier();
+        if ($identifier instanceof IdentifierCollection) {
+            $identifier = method_exists($identifier, 'getIdentificationProvider')
+                ? $identifier->getIdentificationProvider()
+                : null;
+        }
+
+        return $identifier;
+    }
+
+    /**
+     * @return RepositoryInterface|RememberMeTokensTableInterface
+     */
+    protected function _getTokenStorageModel()
+    {
+        return $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function clearIdentity(ServerRequestInterface $request, ResponseInterface $response)
@@ -279,7 +259,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     {
         $data = $this->getConfig('cookie');
 
-        $cookie = new Cookie(
+        return new Cookie(
             $data['name'],
             $value,
             $expires,
@@ -288,7 +268,5 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             $data['secure'],
             $data['httpOnly']
         );
-
-        return $cookie;
     }
 }
