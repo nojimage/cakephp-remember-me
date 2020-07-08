@@ -137,8 +137,8 @@ class CookieAuthenticatorTest extends TestCase
         $result = $authenticator->authenticate($request, $response);
 
         $this->assertInstanceOf(Result::class, $result);
-        $this->assertEquals(Result::FAILURE_CREDENTIALS_INVALID, $result->getStatus());
-        $this->assertSame(['Cookie token does not match'], $result->getErrors());
+        $this->assertEquals(Result::FAILURE_IDENTITY_NOT_FOUND, $result->getStatus());
+        $this->assertSame(['RememberMeToken' => ['token does not match']], $result->getErrors());
     }
 
     /**
@@ -166,8 +166,8 @@ class CookieAuthenticatorTest extends TestCase
         $result = $authenticator->authenticate($request, $response);
 
         $this->assertInstanceOf(Result::class, $result);
-        $this->assertEquals(Result::FAILURE_CREDENTIALS_INVALID, $result->getStatus());
-        $this->assertSame(['Cookie token does not match'], $result->getErrors());
+        $this->assertEquals(Result::FAILURE_IDENTITY_NOT_FOUND, $result->getStatus());
+        $this->assertSame(['RememberMeToken' => ['token expired']], $result->getErrors());
     }
 
     /**

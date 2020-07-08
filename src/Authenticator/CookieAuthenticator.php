@@ -110,14 +110,6 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             return new Result(null, Result::FAILURE_IDENTITY_NOT_FOUND, $this->_identifier->getErrors());
         }
 
-        if (!$this->_verifyToken($identity, $credentials['token'])) {
-            $this->_dropInvalidToken($identity);
-
-            return new Result(null, Result::FAILURE_CREDENTIALS_INVALID, [
-                'Cookie token does not match',
-            ]);
-        }
-
         return new Result($identity, Result::SUCCESS);
     }
 
@@ -133,28 +125,6 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $cookieName = $this->getConfig('cookie.name');
 
         return isset($cookies[$cookieName]) ? $cookies[$cookieName] : null;
-    }
-
-    /**
-     * verify user token, match and expires
-     *
-     * @param ArrayAccess|array $identity the user info
-     * @param string $verifyToken token from cookie
-     * @return bool
-     */
-    protected function _verifyToken($identity, $verifyToken)
-    {
-        $token = $this->_getTokenFromIdentifier($identity);
-
-        if ($token['token'] !== $verifyToken) {
-            return false;
-        }
-
-        if (FrozenTime::now()->gt($token['expires'])) {
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -188,19 +158,6 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         }
 
         return $identity[$tokenField];
-    }
-
-    /**
-     * drop invalid token
-     *
-     * @param ArrayAccess|array $identity the user info
-     * @return bool
-     */
-    protected function _dropInvalidToken($identity)
-    {
-        $token = $this->_getTokenFromIdentifier($identity);
-
-        return $this->_getTokenStorageModel()->delete($token);
     }
 
     /**
