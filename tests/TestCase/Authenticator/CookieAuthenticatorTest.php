@@ -258,8 +258,6 @@ class CookieAuthenticatorTest extends TestCase
         $result = $authenticator->persistIdentity($request, $response, $identity);
 
         $this->assertInternalType('array', $result);
-        $this->assertArrayHasKey('request', $result);
-        $this->assertArrayHasKey('response', $result);
         $this->assertInstanceOf(RequestInterface::class, $result['request']);
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
@@ -290,6 +288,41 @@ class CookieAuthenticatorTest extends TestCase
         ]);
         $result = $authenticator->persistIdentity($request, $response, $identity);
         $this->assertContains('rememberMe=', $result['response']->getHeaderLine('Set-Cookie'));
+    }
+
+    /**
+     * @return void
+     */
+    public function testPersistIdentityCanTwice()
+    {
+        $identifiers = new IdentifierCollection([
+            'Authentication.Password',
+        ]);
+
+        $request = ServerRequestFactory::fromGlobals(
+            ['REQUEST_URI' => '/testpath']
+        );
+        $request = $request->withParsedBody([
+            'remember_me' => 1,
+        ]);
+        $response = new Response();
+        $identity = new Entity([
+            'id' => 1,
+            'username' => 'foo',
+        ]);
+        $identity->setSource('AuthUsers');
+
+        $authenticator = new CookieAuthenticator($identifiers);
+
+        $authenticator->persistIdentity($request, $response, $identity);
+        $authenticator->persistIdentity($request, $response, $identity);
+
+        $token = $this->Tokens->find()->orderDesc('id')->first();
+        /* @var $token RememberMeToken */
+        $this->assertSame('AuthUsers', $token->model);
+        $this->assertSame('1', $token->foreign_id);
+
+        $this->assertCount(2, $this->Tokens->find()->all());
     }
 
     /**
