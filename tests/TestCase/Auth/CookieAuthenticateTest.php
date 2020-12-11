@@ -141,7 +141,7 @@ class CookieAuthenticateTest extends TestCase
         FrozenTime::setTestNow('2017-09-01 12:23:34');
         $request = new ServerRequest('posts/index');
         $cookies = [
-            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'logintoken'),
+            'rememberMe' => CookieAuthenticate::encryptToken('bar', 'series_bar_1', 'logintoken'),
         ];
         $request = $request->withCookieParams($cookies);
         $result = $this->auth->authenticate($request, $this->response);
@@ -169,7 +169,7 @@ class CookieAuthenticateTest extends TestCase
         FrozenTime::setTestNow('2017-09-01 12:23:34');
         $request = new ServerRequest('posts/index');
         $cookies = [
-            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'invalid_token'),
+            'rememberMe' => CookieAuthenticate::encryptToken('bar', 'series_bar_1', 'invalid_token'),
         ];
         $request = $request->withCookieParams($cookies);
         $result = $this->auth->authenticate($request, $this->response);
@@ -197,7 +197,7 @@ class CookieAuthenticateTest extends TestCase
         FrozenTime::setTestNow('2017-10-01 11:22:34');
         $request = new ServerRequest('posts/index');
         $cookies = [
-            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'logintoken'),
+            'rememberMe' => CookieAuthenticate::encryptToken('bar', 'series_bar_1', 'logintoken'),
         ];
         $request = $request->withCookieParams($cookies);
         $result = $this->auth->authenticate($request, $this->response);
@@ -225,7 +225,7 @@ class CookieAuthenticateTest extends TestCase
         FrozenTime::setTestNow('2017-09-01 12:23:34');
         $request = new ServerRequest('posts/index');
         $cookies = [
-            'rememberMe' => $this->auth->encryptToken('bar', 'invalid_series', 'logintoken'),
+            'rememberMe' => CookieAuthenticate::encryptToken('bar', 'invalid_series', 'logintoken'),
         ];
         $request = $request->withCookieParams($cookies);
         $result = $this->auth->authenticate($request, $this->response);
@@ -252,7 +252,7 @@ class CookieAuthenticateTest extends TestCase
         FrozenTime::setTestNow('2017-09-01 12:23:34');
         $request = new ServerRequest('posts/index');
         $cookies = [
-            'rememberMe' => $this->auth->encryptToken('bar', 'series_bar_1', 'logintoken'),
+            'rememberMe' => CookieAuthenticate::encryptToken('bar', 'series_bar_1', 'logintoken'),
         ];
         $request = $request->withCookieParams($cookies);
         $result = $this->auth->authenticate($request, $this->response);
@@ -274,8 +274,8 @@ class CookieAuthenticateTest extends TestCase
      */
     public function testDecodeCookie()
     {
-        $encoded = $this->auth->encryptToken('foo', 'series_foo_1', '123456');
-        $result = $this->auth->decodeCookie($encoded);
+        $encoded = CookieAuthenticate::encryptToken('foo', 'series_foo_1', '123456');
+        $result = CookieAuthenticate::decodeCookie($encoded);
         $this->assertSame(['username' => 'foo', 'series' => 'series_foo_1', 'token' => '123456'], $result);
     }
 
@@ -305,7 +305,7 @@ class CookieAuthenticateTest extends TestCase
 
         $this->assertNotEmpty($subject->response->getCookie('rememberMe'));
 
-        $decode = $this->auth->decodeCookie($subject->response->getCookie('rememberMe')['value']);
+        $decode = CookieAuthenticate::decodeCookie($subject->response->getCookie('rememberMe')['value']);
         $this->assertSame('foo', $decode['username']);
         $this->assertArrayHasKey('token', $decode);
         $this->assertArrayHasKey('series', $decode);
@@ -356,7 +356,7 @@ class CookieAuthenticateTest extends TestCase
 
         $this->assertNotEmpty($subject->response->getCookie('rememberMe'));
 
-        $decode = $this->auth->decodeCookie($subject->response->getCookie('rememberMe')['value']);
+        $decode = CookieAuthenticate::decodeCookie($subject->response->getCookie('rememberMe')['value']);
         $this->assertSame('foo', $decode['username']);
         $this->assertArrayHasKey('token', $decode);
         $this->assertArrayHasKey('series', $decode);
@@ -392,7 +392,7 @@ class CookieAuthenticateTest extends TestCase
         $event = new Event('Auth.afterIdentify', $subject);
 
         // -- run
-        $result = $this->auth->onAfterIdentify($event, $user);
+        $this->auth->onAfterIdentify($event, $user);
 
         // -- assertion
         $this->assertCount(4, $this->Tokens->find()->all(), 'drop expired token');
@@ -450,7 +450,7 @@ class CookieAuthenticateTest extends TestCase
         $request = new ServerRequest();
         $response = new Response();
 
-        $encoded = $this->auth->encryptToken('foo', 'series_foo_1', '123456');
+        $encoded = CookieAuthenticate::encryptToken('foo', 'series_foo_1', '123456');
 
         error_reporting(E_ALL ^ E_USER_DEPRECATED);
         $response = $response->withCookie('rememberMe', ['value' => $encoded]);
@@ -468,7 +468,7 @@ class CookieAuthenticateTest extends TestCase
             return $response;
         });
 
-        $result = $this->auth->decodeCookie($decryptRequest->getCookie('rememberMe'));
+        $result = CookieAuthenticate::decodeCookie($decryptRequest->getCookie('rememberMe'));
         $this->assertSame(['username' => 'foo', 'series' => 'series_foo_1', 'token' => '123456'], $result);
     }
 }

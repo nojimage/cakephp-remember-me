@@ -17,7 +17,7 @@ use Cake\ORM\Query;
 use Cake\ORM\Table;
 use Cake\Utility\Hash;
 use InvalidArgumentException;
-use RememberMe\Compat\Security;
+use RememberMe\Authenticator\EncryptCookieTrait;
 use RememberMe\Model\Entity\RememberMeToken;
 use RememberMe\Model\Table\RememberMeTokensTableInterface;
 
@@ -26,6 +26,7 @@ use RememberMe\Model\Table\RememberMeTokensTableInterface;
  */
 class CookieAuthenticate extends BaseAuthenticate
 {
+    use EncryptCookieTrait;
     use ModelAwareTrait;
 
     public static $userTokenFieldName = 'remember_me_token';
@@ -82,7 +83,7 @@ class CookieAuthenticate extends BaseAuthenticate
         if (!$this->checkFields($request)) {
             return false;
         }
-        $cookieParams = $this->decodeCookie($this->getCookie($request));
+        $cookieParams = static::decodeCookie($this->getCookie($request));
 
         $user = $this->findUserAndTokenBySeries($cookieParams['username'], $cookieParams['series']);
 
@@ -166,43 +167,6 @@ class CookieAuthenticate extends BaseAuthenticate
     }
 
     /**
-     * decode cookie
-     *
-     * @param string $cookie from request
-     * @return array
-     */
-    public function decodeCookie($cookie)
-    {
-        return json_decode(Security::decrypt(base64_decode($cookie), Security::getSalt()), true);
-    }
-
-    /**
-     * encode cookie
-     *
-     * @param string $username logged in user name
-     * @param string $series series string
-     * @param string $token login token
-     * @return string
-     */
-    public function encryptToken($username, $series, $token)
-    {
-        return base64_encode(Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::getSalt()));
-    }
-
-    /**
-     * generate token
-     *
-     * @param array $user logged in user info
-     * @return string
-     */
-    protected function generateToken(array $user)
-    {
-        $prefix = bin2hex(Security::randomBytes(16));
-
-        return Security::hash($prefix . serialize($user));
-    }
-
-    /**
      * save login token to tokens table
      *
      * @param array $user logged in user info
@@ -231,7 +195,7 @@ class CookieAuthenticate extends BaseAuthenticate
             $entity = $tokenTable->newEntity([
                 'model' => $userModel,
                 'foreign_id' => $user[$userTable->getPrimaryKey()],
-                'series' => $this->generateToken($user),
+                'series' => static::_generateToken($user),
                 'token' => $token,
                 'expires' => $expires,
             ]);
@@ -389,7 +353,7 @@ class CookieAuthenticate extends BaseAuthenticate
         if ($this->getConfig('always') || $authComponent->request->getData($this->getConfig('inputKey'))) {
             // -- set token to cookie & session
             // save token
-            $token = $this->saveToken($user, $this->generateToken($user));
+            $token = $this->saveToken($user, static::_generateToken($user));
 
             if ($token) {
                 // write cookie
@@ -417,7 +381,7 @@ class CookieAuthenticate extends BaseAuthenticate
         if (isset($user[$this->getConfig('fields.username')])) {
             // write cookie
             $username = $user[$this->getConfig('fields.username')];
-            $cookieToken = $this->encryptToken($username, $token->series, $token->token);
+            $cookieToken = static::encryptToken($username, $token->series, $token->token);
             $response = $this->setCookie($response, $cookieToken);
         }
 
