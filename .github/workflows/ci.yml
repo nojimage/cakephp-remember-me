@@ -130,9 +130,9 @@ jobs:
           if [[ ${{ matrix.db-type }} == 'mysql:5.6' ]]; then export DB_URL='mysql://root:root@127.0.0.1/cakephp?encoding=utf8'; fi
 
           if [[ ${{ matrix.coverage }} == 'coverage' ]]; then
-            export CODECOVERAGE=1 && vendor/bin/phpunit --verbose --coverage-clover=coverage.xml
+            export CODECOVERAGE=1 && vendor/bin/phpunit --stderr --verbose --coverage-clover=coverage.xml
           else
-            vendor/bin/phpunit
+            vendor/bin/phpunit --stderr
           fi
 
       - name: Submit code coverage
