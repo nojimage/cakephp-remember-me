@@ -1,10 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Authenticator;
 
-use ArrayAccess;
+use Cake\Utility\Security;
 use InvalidArgumentException;
-use RememberMe\Compat\Security;
 
 /**
  * Encrypt Cookie Utility
@@ -15,12 +15,17 @@ trait EncryptCookieTrait
      * decode cookie
      *
      * @param string $cookie from request
-     * @return array
-     * @throws InvalidArgumentException
+     * @return array ['username' => ..., 'series' => ..., 'token' => ...]
+     * @throws \InvalidArgumentException
      */
-    public static function decodeCookie($cookie)
+    public static function decodeCookie(string $cookie): array
     {
-        return json_decode(Security::decrypt(base64_decode($cookie), Security::getSalt()), true);
+        $decryptedValue = Security::decrypt(base64_decode($cookie), Security::getSalt());
+        if ($decryptedValue === null) {
+            throw new InvalidArgumentException('Can\'t decrypt cookie.');
+        }
+
+        return json_decode($decryptedValue, true);
     }
 
     /**
@@ -31,18 +36,23 @@ trait EncryptCookieTrait
      * @param string $token login token
      * @return string
      */
-    public static function encryptToken($username, $series, $token)
+    public static function encryptToken(string $username, string $series, string $token): string
     {
-        return base64_encode(Security::encrypt(json_encode(compact('username', 'series', 'token')), Security::getSalt()));
+        return base64_encode(
+            Security::encrypt(
+                json_encode(compact('username', 'series', 'token')),
+                Security::getSalt()
+            )
+        );
     }
 
     /**
      * generate token
      *
-     * @param ArrayAccess|array $identity logged in user info
+     * @param \ArrayAccess|array $identity logged in user info
      * @return string
      */
-    protected static function _generateToken($identity)
+    protected static function _generateToken($identity): string
     {
         $prefix = bin2hex(Security::randomBytes(16));
 

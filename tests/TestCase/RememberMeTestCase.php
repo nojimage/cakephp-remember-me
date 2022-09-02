@@ -1,11 +1,11 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Test\TestCase;
 
-use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
-use RememberMe\Compat\Security;
-use RememberMe\Test\Model\Table\AuthUsersTable;
+use Cake\Utility\Security;
+use TestApp\Model\Table\AuthUsersTable;
 
 abstract class RememberMeTestCase extends TestCase
 {
@@ -21,9 +21,9 @@ abstract class RememberMeTestCase extends TestCase
     private $salt;
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->_setupUsersAndPasswords();
@@ -32,7 +32,7 @@ abstract class RememberMeTestCase extends TestCase
         Security::setSalt('DYhG93b0qyJfIxfs2guVoUubWwvniR2G0FgaC9mi');
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         Security::setSalt($this->salt);
         parent::tearDown();
@@ -43,15 +43,15 @@ abstract class RememberMeTestCase extends TestCase
      *
      * @return void
      */
-    protected function _setupUsersAndPasswords()
+    protected function _setupUsersAndPasswords(): void
     {
         $password = password_hash('12345678', PASSWORD_DEFAULT);
-        TableRegistry::getTableLocator()->clear();
+        $this->getTableLocator()->clear();
 
-        $Users = TableRegistry::getTableLocator()->get('Users');
+        $Users = $this->getTableLocator()->get('Users');
         $Users->updateAll(['password' => $password], []);
 
-        $AuthUsers = TableRegistry::getTableLocator()->get('AuthUsers', [
+        $AuthUsers = $this->getTableLocator()->get('AuthUsers', [
             'className' => AuthUsersTable::class,
         ]);
         $AuthUsers->updateAll(['password' => $password], []);

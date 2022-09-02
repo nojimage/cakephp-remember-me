@@ -1,27 +1,24 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Model\Table;
 
-use Cake\Datasource\EntityInterface;
 use Cake\I18n\FrozenTime;
-use Cake\ORM\Behavior\TimestampBehavior;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
-use RememberMe\Model\Entity\RememberMeToken;
 
 /**
  * RememberMeTokens Model
  *
- * @method RememberMeToken get($primaryKey, $options = [])
- * @method RememberMeToken newEntity($data = null, array $options = [])
- * @method RememberMeToken[] newEntities(array $data, array $options = [])
- * @method RememberMeToken|bool save(EntityInterface $entity, $options = [])
- * @method RememberMeToken patchEntity(EntityInterface $entity, array $data, array $options = [])
- * @method RememberMeToken[] patchEntities($entities, array $data, array $options = [])
- * @method RememberMeToken findOrCreate($search, callable $callback = null, $options = [])
- *
- * @mixin TimestampBehavior
+ * @method \RememberMe\Model\Entity\RememberMeToken get($primaryKey, $options = [])
+ * @method \RememberMe\Model\Entity\RememberMeToken newEntity($data = null, array $options = [])
+ * @method \RememberMe\Model\Entity\RememberMeToken[] newEntities(array $data, array $options = [])
+ * @method \RememberMe\Model\Entity\RememberMeToken|false save(\RememberMe\Model\Table\EntityInterface $entity, $options = [])
+ * @method \RememberMe\Model\Entity\RememberMeToken patchEntity(\RememberMe\Model\Table\EntityInterface $entity, array $data, array $options = [])
+ * @method \RememberMe\Model\Entity\RememberMeToken[] patchEntities($entities, array $data, array $options = [])
+ * @method \RememberMe\Model\Table\RememberMeToken findOrCreate($search, callable $callback = null, $options = [])
+ * @mixin \RememberMe\Model\Table\TimestampBehavior
  */
 class RememberMeTokensTable extends Table implements RememberMeTokensTableInterface
 {
@@ -31,7 +28,7 @@ class RememberMeTokensTable extends Table implements RememberMeTokensTableInterf
      * @param array $config The configuration for the Table.
      * @return void
      */
-    public function initialize(array $config)
+    public function initialize(array $config): void
     {
         parent::initialize($config);
 
@@ -45,35 +42,35 @@ class RememberMeTokensTable extends Table implements RememberMeTokensTableInterf
     /**
      * Default validation rules.
      *
-     * @param Validator $validator Validator instance.
-     * @return Validator
+     * @param \Cake\Validation\Validator $validator Validator instance.
+     * @return \Cake\Validation\Validator
      */
-    public function validationDefault(Validator $validator)
+    public function validationDefault(Validator $validator): Validator
     {
         $validator
             ->integer('id')
-            ->allowEmpty('id', 'create');
+            ->allowEmptyString('id', 'create');
 
         $validator
             ->requirePresence('model', 'create')
-            ->notEmpty('model');
+            ->allowEmptyString('model');
 
         $validator
             ->requirePresence('foreign_id', 'create')
-            ->notEmpty('foreign_id');
+            ->allowEmptyString('foreign_id');
 
         $validator
             ->requirePresence('series', 'create')
-            ->notEmpty('series');
+            ->allowEmptyString('series');
 
         $validator
             ->requirePresence('token', 'create')
-            ->notEmpty('token');
+            ->allowEmptyString('token');
 
         $validator
             ->dateTime('expires')
             ->requirePresence('expires', 'create')
-            ->notEmpty('expires');
+            ->allowEmptyDateTime('expires');
 
         return $validator;
     }
@@ -82,10 +79,10 @@ class RememberMeTokensTable extends Table implements RememberMeTokensTableInterf
      * Returns a rules checker object that will be used for validating
      * application integrity.
      *
-     * @param RulesChecker $rules The rules object to be modified.
-     * @return RulesChecker
+     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
+     * @return \Cake\ORM\RulesChecker
      */
-    public function buildRules(RulesChecker $rules)
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->isUnique(['model', 'foreign_id', 'series']));
 
@@ -95,19 +92,19 @@ class RememberMeTokensTable extends Table implements RememberMeTokensTableInterf
     /**
      * drop expired tokens
      *
-     * @param string $userModel target user model
-     * @param string $foreignId target user id
-     * @return bool
+     * @param string|null $userModel target user model
+     * @param string|int|null $foreignId target user id
+     * @return int the dropped token count
      */
-    public function dropExpired($userModel = null, $foreignId = null)
+    public function dropExpired(?string $userModel = null, $foreignId = null): int
     {
         $conditions = [
-            $this->aliasField('expires') . ' <' => FrozenTime::now(),
+            $this->aliasField('expires <') => FrozenTime::now(),
         ];
-        if (!is_null($userModel)) {
+        if ($userModel !== null) {
             $conditions[$this->aliasField('model')] = $userModel;
         }
-        if (!is_null($foreignId)) {
+        if ($foreignId !== null) {
             $conditions[$this->aliasField('foreign_id')] = $foreignId;
         }
 

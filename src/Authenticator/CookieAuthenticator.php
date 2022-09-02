@@ -1,25 +1,23 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Authenticator;
 
-use ArrayAccess;
 use Authentication\Authenticator\AbstractAuthenticator;
 use Authentication\Authenticator\PersistenceInterface;
 use Authentication\Authenticator\Result;
+use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierCollection;
 use Authentication\Identifier\IdentifierInterface;
 use Authentication\UrlChecker\UrlCheckerTrait;
 use Cake\Datasource\EntityInterface;
 use Cake\Http\Cookie\Cookie;
-use Cake\Http\Cookie\CookieInterface;
 use Cake\I18n\FrozenTime;
-use Cake\ORM\Exception\PersistenceFailedException;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\Utility\Hash;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use RememberMe\Model\Table\RememberMeTokensTableInterface;
 
 /**
  * Class CookieAuthenticator
@@ -35,7 +33,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     use UrlCheckerTrait;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     protected $_defaultConfig = [
         'loginUrl' => null,
@@ -61,7 +59,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     /**
      * the constructor.
      *
-     * @param IdentifierInterface $identifier Identifier or identifiers collection.
+     * @param \Authentication\Identifier\IdentifierInterface $identifier Identifier or identifiers collection.
      * @param array $config Configuration settings.
      */
     public function __construct(IdentifierInterface $identifier, array $config = [])
@@ -74,14 +72,14 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function authenticate(ServerRequestInterface $request, ResponseInterface $response)
+    public function authenticate(ServerRequestInterface $request): ResultInterface
     {
         $cookie = $this->_getCookie($request);
 
-        if ($cookie === null) {
-            return new Result(null, Result::FAILURE_CREDENTIALS_MISSING, [
+        if ($cookie === '') {
+            return new Result(null, ResultInterface::FAILURE_CREDENTIALS_MISSING, [
                 'Login credentials not found',
             ]);
         }
@@ -89,14 +87,14 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         try {
             $credentials = static::decodeCookie($cookie);
         } catch (InvalidArgumentException $e) {
-            return new Result(null, Result::FAILURE_CREDENTIALS_INVALID, [
+            return new Result(null, ResultInterface::FAILURE_CREDENTIALS_INVALID, [
                 'Cookie token is invalid',
                 $e->getMessage(),
             ]);
         }
 
         if (!isset($credentials['username'], $credentials['series'], $credentials['token'])) {
-            return new Result(null, Result::FAILURE_CREDENTIALS_INVALID, [
+            return new Result(null, ResultInterface::FAILURE_CREDENTIALS_INVALID, [
                 'Cookie token is invalid',
             ]);
         }
@@ -104,30 +102,30 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $identity = $this->_identifier->identify($credentials);
 
         if (empty($identity)) {
-            return new Result(null, Result::FAILURE_IDENTITY_NOT_FOUND, $this->_identifier->getErrors());
+            return new Result(null, ResultInterface::FAILURE_IDENTITY_NOT_FOUND, $this->_identifier->getErrors());
         }
 
-        return new Result($identity, Result::SUCCESS);
+        return new Result($identity, ResultInterface::SUCCESS);
     }
 
     /**
      * get login token form cookie
      *
-     * @param ServerRequestInterface $request a Request instance
-     * @return string|null
+     * @param \Psr\Http\Message\ServerRequestInterface $request a Request instance
+     * @return string
      */
-    protected function _getCookie(ServerRequestInterface $request)
+    protected function _getCookie(ServerRequestInterface $request): string
     {
         $cookies = $request->getCookieParams();
         $cookieName = $this->getConfig('cookie.name');
 
-        return isset($cookies[$cookieName]) ? $cookies[$cookieName] : null;
+        return $cookies[$cookieName] ?? '';
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function persistIdentity(ServerRequestInterface $request, ResponseInterface $response, $identity)
+    public function persistIdentity(ServerRequestInterface $request, ResponseInterface $response, $identity): array
     {
         $field = $this->getConfig('rememberMeField');
         $bodyData = $request->getParsedBody();
@@ -161,28 +159,20 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     /**
      * save login token to tokens table
      *
-     * @param ArrayAccess|array $identity logged in user info
+     * @param \ArrayAccess|array $identity logged in user info
      * @param string $token login token
-     * @return EntityInterface
-     * @throws PersistenceFailedException
+     * @return \Cake\Datasource\EntityInterface
+     * @throws \Cake\ORM\Exception\PersistenceFailedException
      */
-    protected function _saveToken($identity, $token)
+    protected function _saveToken($identity, string $token): EntityInterface
     {
-        $userModel = null;
-        if ($identity instanceof EntityInterface) {
-            $userModel = $identity->getSource();
-        } elseif (
-            ($identifier = $this->_getSuccessfulIdentifier())
-            && method_exists($identifier, 'getResolver')
-        ) {
-            $userModel = $identifier->getResolver()->getConfig('userModel');
-        }
+        $userModel = $this->_getUserModel($identity);
         if ($userModel === null) {
             throw new InvalidArgumentException('Can\'t detect user model');
         }
 
         $userTable = $this->getTableLocator()->get($userModel);
-        /** @var RememberMeTokensTableInterface $tokenTable */
+        /** @var \RememberMe\Model\Table\RememberMeTokensTableInterface $tokenTable */
         $tokenTable = $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
 
         if ($this->getConfig('dropExpiredToken')) {
@@ -203,9 +193,9 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     }
 
     /**
-     * @return IdentifierInterface|null
+     * @return \Authentication\Identifier\IdentifierInterface|null
      */
-    protected function _getSuccessfulIdentifier()
+    protected function _getSuccessfulIdentifier(): ?IdentifierInterface
     {
         $identifier = $this->getIdentifier();
         if ($identifier instanceof IdentifierCollection) {
@@ -218,9 +208,9 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function clearIdentity(ServerRequestInterface $request, ResponseInterface $response)
+    public function clearIdentity(ServerRequestInterface $request, ResponseInterface $response): array
     {
         // drop token
         $cookie = $this->_getCookie($request);
@@ -243,7 +233,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         }
 
         // clear cookie
-        $cookie = $this->_createCookie(null)->withExpired();
+        $cookie = $this->_createCookie('')->withExpired();
 
         return [
             'request' => $request,
@@ -254,11 +244,11 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     /**
      * Creates a cookie instance with configured defaults.
      *
-     * @param mixed $value Cookie value.
-     * @param FrozenTime|null $expires the Cookie expire
-     * @return CookieInterface
+     * @param string $value Cookie value.
+     * @param \Cake\I18n\FrozenTime|null $expires the Cookie expire
+     * @return \Cake\Http\Cookie\Cookie
      */
-    protected function _createCookie($value, FrozenTime $expires = null)
+    protected function _createCookie(string $value, ?FrozenTime $expires = null): Cookie
     {
         $data = $this->getConfig('cookie');
 
@@ -271,5 +261,23 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             $data['secure'],
             $data['httpOnly']
         );
+    }
+
+    /**
+     * @param \ArrayAccess|array $identity logged in user info
+     * @return string|null
+     */
+    protected function _getUserModel($identity): ?string
+    {
+        if ($identity instanceof EntityInterface) {
+            return $identity->getSource();
+        }
+
+        $identifier = $this->_getSuccessfulIdentifier();
+        if ($identifier && method_exists($identifier, 'getResolver')) {
+            return $identifier->getResolver()->getConfig('userModel');
+        }
+
+        return null;
     }
 }

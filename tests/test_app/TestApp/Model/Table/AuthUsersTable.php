@@ -1,6 +1,7 @@
 <?php
+declare(strict_types=1);
 
-namespace RememberMe\Test\Model\Table;
+namespace TestApp\Model\Table;
 
 use Cake\ORM\Query;
 use Cake\ORM\Table;
@@ -14,7 +15,7 @@ class AuthUsersTable extends Table
      * @param Query $query
      * @return Query
      */
-    public function findOnlyUsername(Query $query)
+    public function findOnlyUsername(Query $query): Query
     {
         return $query->select(['username']);
     }

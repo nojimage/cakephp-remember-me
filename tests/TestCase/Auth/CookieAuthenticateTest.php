@@ -1,21 +1,23 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Test\TestCase\Auth;
 
-use Cake\Controller\ComponentRegistry;
 use Cake\Controller\Component\AuthComponent;
+use Cake\Controller\ComponentRegistry;
+use Cake\Controller\Controller;
 use Cake\Event\Event;
+use Cake\Http\Cookie\Cookie;
+use Cake\Http\Middleware\EncryptedCookieMiddleware;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\I18n\FrozenTime;
-use Cake\ORM\Table;
-use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use Cake\Utility\Hash;
+use Cake\Utility\Security;
 use RememberMe\Auth\CookieAuthenticate;
-use RememberMe\Compat\Security;
-use RememberMe\Model\Table\RememberMeTokensTable;
-use RememberMe\Test\Model\Table\AuthUsersTable;
+use TestApp\Http\TestRequestHandler;
+use TestApp\Model\Table\AuthUsersTable;
 
 /**
  * Test case for CookieAuthenticate
@@ -53,13 +55,11 @@ class CookieAuthenticateTest extends TestCase
     private $salt;
 
     /**
-     *
      * @var RememberMeTokensTable
      */
     private $Tokens;
 
     /**
-     *
      * @var Table
      */
     private $Users;
@@ -69,7 +69,7 @@ class CookieAuthenticateTest extends TestCase
      *
      * @return void
      */
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->Collection = $this->getMockBuilder(ComponentRegistry::class)->getMock();
@@ -78,12 +78,12 @@ class CookieAuthenticateTest extends TestCase
         ]);
         $password = password_hash('password', PASSWORD_DEFAULT);
 
-        TableRegistry::clear();
+        $this->getTableLocator()->clear();
         // set password
-        $this->Users = TableRegistry::get('AuthUsers', ['className' => AuthUsersTable::class]);
+        $this->Users = $this->getTableLocator()->get('AuthUsers', ['className' => AuthUsersTable::class]);
         $this->Users->updateAll(['password' => $password], []);
         // set tokens
-        $this->Tokens = TableRegistry::get('RememberMe.RememberMeTokens');
+        $this->Tokens = $this->getTableLocator()->get('RememberMe.RememberMeTokens');
         $this->Tokens->updateAll(['token' => 'logintoken'], []);
 
         $this->response = $this->getMockBuilder(Response::class)->getMock();
@@ -96,10 +96,9 @@ class CookieAuthenticateTest extends TestCase
      *
      * @return void
      */
-    public function tearDown()
+    public function tearDown(): void
     {
-        unset($this->Users);
-        unset($this->Tokens);
+        unset($this->Users, $this->Tokens);
         Security::setSalt($this->salt);
         FrozenTime::setTestNow();
         parent::tearDown();
@@ -110,7 +109,7 @@ class CookieAuthenticateTest extends TestCase
      *
      * @return void
      */
-    public function testConstructor()
+    public function testConstructor(): void
     {
         $object = new CookieAuthenticate($this->Collection, [
             'userModel' => 'AuthUsers',
@@ -125,9 +124,9 @@ class CookieAuthenticateTest extends TestCase
      *
      * @return void
      */
-    public function testAuthenticateNoCookie()
+    public function testAuthenticateNoCookie(): void
     {
-        $request = new ServerRequest('posts/index');
+        $request = new ServerRequest(['url' => 'posts/index']);
         $this->assertFalse($this->auth->authenticate($request, $this->response));
     }
 
@@ -136,10 +135,10 @@ class CookieAuthenticateTest extends TestCase
      *
      * @return void
      */
-    public function testAuthenticateSuccess()
+    public function testAuthenticateSuccess(): void
     {
         FrozenTime::setTestNow('2017-09-01 12:23:34');
-        $request = new ServerRequest('posts/index');
+        $request = new ServerRequest(['url' => 'posts/index']);
         $cookies = [
             'rememberMe' => CookieAuthenticate::encryptToken('bar', 'series_bar_1', 'logintoken'),
         ];
@@ -164,10 +163,10 @@ class CookieAuthenticateTest extends TestCase
      *
      * @return void
      */
-    public function testAuthenticateFailureWithInvalidToken()
+    public function testAuthenticateFailureWithInvalidToken(): void
     {
         FrozenTime::setTestNow('2017-09-01 12:23:34');
-        $request = new ServerRequest('posts/index');
+        $request = new ServerRequest(['url' => 'posts/index']);
         $cookies = [
             'rememberMe' => CookieAuthenticate::encryptToken('bar', 'series_bar_1', 'invalid_token'),
         ];
@@ -192,10 +191,10 @@ class CookieAuthenticateTest extends TestCase
      *
      * @return void
      */
-    public function testAuthenticateFailureWithExpireToken()
+    public function testAuthenticateFailureWithExpireToken(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:34');
-        $request = new ServerRequest('posts/index');
+        $request = new ServerRequest(['url' => 'posts/index']);
         $cookies = [
             'rememberMe' => CookieAuthenticate::encryptToken('bar', 'series_bar_1', 'logintoken'),
         ];
@@ -220,10 +219,10 @@ class CookieAuthenticateTest extends TestCase
      *
      * @return void
      */
-    public function testAuthenticateFailureWithInvalidSeries()
+    public function testAuthenticateFailureWithInvalidSeries(): void
     {
         FrozenTime::setTestNow('2017-09-01 12:23:34');
-        $request = new ServerRequest('posts/index');
+        $request = new ServerRequest(['url' => 'posts/index']);
         $cookies = [
             'rememberMe' => CookieAuthenticate::encryptToken('bar', 'invalid_series', 'logintoken'),
         ];
@@ -245,12 +244,12 @@ class CookieAuthenticateTest extends TestCase
      * @return void
      * @link https://github.com/nojimage/cakephp-remember-me/issues/1
      */
-    public function testAuthenticateWithFinder()
+    public function testAuthenticateWithFinder(): void
     {
         $this->auth->setConfig('finder', 'onlyUsername');
 
         FrozenTime::setTestNow('2017-09-01 12:23:34');
-        $request = new ServerRequest('posts/index');
+        $request = new ServerRequest(['url' => 'posts/index']);
         $cookies = [
             'rememberMe' => CookieAuthenticate::encryptToken('bar', 'series_bar_1', 'logintoken'),
         ];
@@ -272,7 +271,7 @@ class CookieAuthenticateTest extends TestCase
     /**
      * test for decodeCookie
      */
-    public function testDecodeCookie()
+    public function testDecodeCookie(): void
     {
         $encoded = CookieAuthenticate::encryptToken('foo', 'series_foo_1', '123456');
         $result = CookieAuthenticate::decodeCookie($encoded);
@@ -282,19 +281,20 @@ class CookieAuthenticateTest extends TestCase
     /**
      * test for 'Auth.afterIdentify' event
      */
-    public function testOnAfterIdentify()
+    public function testOnAfterIdentify(): void
     {
         // -- prepare
         FrozenTime::setTestNow('2017-09-03 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
         $request = (new ServerRequest())->withData('remember_me', true);
-        $response = (new Response());
 
+        $controller = new Controller($request, new Response());
         $subject = $this->getMockBuilder(AuthComponent::class)
             ->setConstructorArgs([$this->Collection])
+            ->onlyMethods(['getController'])
             ->getMock();
-        $subject->request = $request;
-        $subject->response = $response;
+        $subject->method('getController')->willReturn($controller);
+
         $event = new Event('Auth.afterIdentify', $subject);
 
         // -- run
@@ -303,9 +303,9 @@ class CookieAuthenticateTest extends TestCase
         // -- assertion
         $this->assertSame(7, Hash::get($result, 'remember_me_token.id'), 'check override user data');
 
-        $this->assertNotEmpty($subject->response->getCookie('rememberMe'));
+        $this->assertNotEmpty($controller->getResponse()->getCookie('rememberMe'));
 
-        $decode = CookieAuthenticate::decodeCookie($subject->response->getCookie('rememberMe')['value']);
+        $decode = CookieAuthenticate::decodeCookie($controller->getResponse()->getCookie('rememberMe')['value']);
         $this->assertSame('foo', $decode['username']);
         $this->assertArrayHasKey('token', $decode);
         $this->assertArrayHasKey('series', $decode);
@@ -327,7 +327,7 @@ class CookieAuthenticateTest extends TestCase
     /**
      * test for 'Auth.afterIdentify' event when token exists
      */
-    public function testOnAfterIdentifyWhenTokenExists()
+    public function testOnAfterIdentifyWhenTokenExists(): void
     {
         // -- prepare
         FrozenTime::setTestNow('2017-08-01 12:23:34');
@@ -339,13 +339,14 @@ class CookieAuthenticateTest extends TestCase
             ],
         ];
         $request = (new ServerRequest())->withData('remember_me', true);
-        $response = (new Response());
 
+        $controller = new Controller($request, new Response());
         $subject = $this->getMockBuilder(AuthComponent::class)
             ->setConstructorArgs([$this->Collection])
+            ->onlyMethods(['getController'])
             ->getMock();
-        $subject->request = $request;
-        $subject->response = $response;
+        $subject->method('getController')->willReturn($controller);
+
         $event = new Event('Auth.afterIdentify', $subject);
 
         // -- run
@@ -354,9 +355,9 @@ class CookieAuthenticateTest extends TestCase
         // -- assertion
         $this->assertSame(2, Hash::get($result, 'remember_me_token.id'), 'check override user data');
 
-        $this->assertNotEmpty($subject->response->getCookie('rememberMe'));
+        $this->assertNotEmpty($controller->getResponse()->getCookie('rememberMe'));
 
-        $decode = CookieAuthenticate::decodeCookie($subject->response->getCookie('rememberMe')['value']);
+        $decode = CookieAuthenticate::decodeCookie($controller->getResponse()->getCookie('rememberMe')['value']);
         $this->assertSame('foo', $decode['username']);
         $this->assertArrayHasKey('token', $decode);
         $this->assertArrayHasKey('series', $decode);
@@ -376,19 +377,20 @@ class CookieAuthenticateTest extends TestCase
     /**
      * test for 'Auth.afterIdentify' event
      */
-    public function testDropExporedTokensOnAfterIdentify()
+    public function testDropExpiredTokensOnAfterIdentify(): void
     {
         // -- prepare
         FrozenTime::setTestNow('2017-10-01 12:23:34');
         $user = ['id' => 1, 'username' => 'foo'];
         $request = (new ServerRequest())->withData('remember_me', true);
-        $response = (new Response());
 
+        $controller = new Controller($request, new Response());
         $subject = $this->getMockBuilder(AuthComponent::class)
             ->setConstructorArgs([$this->Collection])
+            ->onlyMethods(['getController'])
             ->getMock();
-        $subject->request = $request;
-        $subject->response = $response;
+        $subject->method('getController')->willReturn($controller);
+
         $event = new Event('Auth.afterIdentify', $subject);
 
         // -- run
@@ -401,7 +403,7 @@ class CookieAuthenticateTest extends TestCase
     /**
      * test for 'Auth.logout' event
      */
-    public function testOnLogout()
+    public function testOnLogout(): void
     {
         $user = [
             'id' => 1,
@@ -412,20 +414,21 @@ class CookieAuthenticateTest extends TestCase
         ];
 
         // set login cookie
-        error_reporting(E_ALL ^ E_USER_DEPRECATED);
-        $response = (new Response())->withCookie('rememberMe', 'dummy');
-        error_reporting(E_ALL);
+        $response = (new Response())->withCookie(new Cookie('rememberMe', 'dummy'));
 
         // test logout
+        $controller = new Controller(null, $response);
         $subject = $this->getMockBuilder(AuthComponent::class)
             ->setConstructorArgs([$this->Collection])
+            ->onlyMethods(['getController'])
             ->getMock();
-        $subject->response = $response;
+        $subject->method('getController')->willReturn($controller);
+
         $event = new Event('Auth.logout', $subject);
 
         $this->assertTrue($this->auth->onLogout($event, $user));
 
-        $cookie = $subject->response->getCookie('rememberMe');
+        $cookie = $controller->getResponse()->getCookie('rememberMe');
         $this->assertEmpty($cookie['value'], 'clear cookie values');
 
         $tokens = $this->Tokens->find()->where([
@@ -438,35 +441,28 @@ class CookieAuthenticateTest extends TestCase
     /**
      * test with EncryptedCookieMiddleware
      */
-    public function testWorkWithEncryptedCookieMiddleware()
+    public function testWorkWithEncryptedCookieMiddleware(): void
     {
-        if (!class_exists('\Cake\Http\Middleware\EncryptedCookieMiddleware')) {
-            $this->markTestSkipped();
-
-            return;
-        }
-
-        $middleware = new \Cake\Http\Middleware\EncryptedCookieMiddleware(['rememberMe'], str_repeat('1234abcd', 4));
+        $middleware = new EncryptedCookieMiddleware(['rememberMe'], str_repeat('1234abcd', 4));
         $request = new ServerRequest();
-        $response = new Response();
 
-        $encoded = CookieAuthenticate::encryptToken('foo', 'series_foo_1', '123456');
+        $response = $middleware->process($request, new TestRequestHandler(function () {
+            $encoded = CookieAuthenticate::encryptToken('foo', 'series_foo_1', '123456');
 
-        error_reporting(E_ALL ^ E_USER_DEPRECATED);
-        $response = $response->withCookie('rememberMe', ['value' => $encoded]);
-        error_reporting(E_ALL);
-        $response = $middleware($request, $response, function ($request, $response) {
-            return $response;
-        });
+            return (new Response())->withCookie(new Cookie('rememberMe', $encoded));
+        }));
 
         $request = $request->withCookieCollection($response->getCookieCollection());
+
+        /** @var ServerRequest $decryptRequest */
         $decryptRequest = null;
-        /* @var $decryptRequest ServerRequest */
-        $middleware($request, $response, function ($request, $response) use (&$decryptRequest) {
+        $handler = new TestRequestHandler(static function (ServerRequest $request) use (&$decryptRequest) {
             $decryptRequest = $request;
 
-            return $response;
+            return new Response();
         });
+
+        $middleware->process($request, $handler);
 
         $result = CookieAuthenticate::decodeCookie($decryptRequest->getCookie('rememberMe'));
         $this->assertSame(['username' => 'foo', 'series' => 'series_foo_1', 'token' => '123456'], $result);

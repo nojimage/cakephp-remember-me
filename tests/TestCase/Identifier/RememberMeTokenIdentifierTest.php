@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Test\TestCase\Identifier;
 
@@ -17,7 +18,7 @@ class RememberMeTokenIdentifierTest extends TestCase
     /**
      * @return void
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         FrozenTime::setTestNow();
         parent::tearDown();
@@ -26,12 +27,12 @@ class RememberMeTokenIdentifierTest extends TestCase
     /**
      * @return void
      */
-    public function testIdentifyValid()
+    public function testIdentifyValid(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:33');
         $resolver = $this->getMockBuilder(OrmResolver::class)
             ->disableOriginalConstructor()
-            ->setMethods(['find'])
+            ->onlyMethods(['find'])
             ->getMock();
 
         $identifier = new RememberMeTokenIdentifier();
@@ -62,12 +63,12 @@ class RememberMeTokenIdentifierTest extends TestCase
     /**
      * @return void
      */
-    public function testIdentifyNotMatchSeries()
+    public function testIdentifyNotMatchSeries(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:33');
         $resolver = $this->getMockBuilder(OrmResolver::class)
             ->disableOriginalConstructor()
-            ->setMethods(['find'])
+            ->onlyMethods(['find'])
             ->getMock();
 
         $identifier = new RememberMeTokenIdentifier();
@@ -91,12 +92,12 @@ class RememberMeTokenIdentifierTest extends TestCase
     /**
      * @return void
      */
-    public function testIdentifyNotMatchToken()
+    public function testIdentifyNotMatchToken(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:33');
         $resolver = $this->getMockBuilder(OrmResolver::class)
             ->disableOriginalConstructor()
-            ->setMethods(['find'])
+            ->onlyMethods(['find'])
             ->getMock();
 
         $identifier = new RememberMeTokenIdentifier();
@@ -120,12 +121,12 @@ class RememberMeTokenIdentifierTest extends TestCase
     /**
      * @return void
      */
-    public function testIdentifyExpired()
+    public function testIdentifyExpired(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:34');
         $resolver = $this->getMockBuilder(OrmResolver::class)
             ->disableOriginalConstructor()
-            ->setMethods(['find'])
+            ->onlyMethods(['find'])
             ->getMock();
 
         $identifier = new RememberMeTokenIdentifier();

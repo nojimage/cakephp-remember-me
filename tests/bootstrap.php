@@ -1,15 +1,27 @@
 <?php
-
-use Cake\Core\Configure;
-use Cake\Core\Plugin;
+/** @noinspection MkdirRaceConditionInspection */
+declare(strict_types=1);
 
 /**
- * Test suite bootstrap for RememberMe.
+ * CakePHP(tm) : Rapid Development Framework (http://cakephp.org)
+ * Copyright (c) Cake Software Foundation, Inc. (http://cakefoundation.org)
  *
- * This function is used to find the location of CakePHP whether CakePHP
- * has been installed as a dependency of the plugin, or the plugin is itself
- * installed as a dependency of an application.
+ * Licensed under The MIT License
+ * For full copyright and license information, please see the LICENSE.txt
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @copyright     Copyright (c) Cake Software Foundation, Inc. (http://cakefoundation.org)
+ * @link          http://cakephp.org CakePHP(tm) Project
+ * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
+use Cake\Cache\Cache;
+use Cake\Core\Configure;
+use Cake\Core\Plugin;
+use Cake\Datasource\ConnectionManager;
+use Cake\Routing\Router;
+use Cake\Utility\Security;
+
 $findRoot = function ($root) {
     do {
         $lastRoot = $root;
@@ -18,24 +30,55 @@ $findRoot = function ($root) {
             return $root;
         }
     } while ($root !== $lastRoot);
-
-    throw new Exception("Cannot find the root of the application, unable to run tests");
+    throw new Exception('Cannot find the root of the application, unable to run tests');
 };
 $root = $findRoot(__FILE__);
 unset($findRoot);
-
 chdir($root);
-if (file_exists($root . '/config/bootstrap.php')) {
-    require $root . '/config/bootstrap.php';
-} else {
-    require $root . '/vendor/cakephp/cakephp/tests/bootstrap.php';
 
-    // Disable deprecations for now when using 3.6
-    if (version_compare(Configure::version(), '3.6.0', '>=')) {
-        error_reporting(E_ALL ^ E_USER_DEPRECATED);
-    }
+require_once 'vendor/cakephp/cakephp/src/basics.php';
+require_once 'vendor/autoload.php';
 
-    Plugin::load('RememberMe', ['path' => dirname(dirname(__FILE__)) . DS]);
+define('ROOT', $root . DS . 'tests' . DS . 'test_app' . DS);
+define('APP', ROOT . 'App' . DS);
+define('TMP', sys_get_temp_dir() . DS);
+define('CONFIG', ROOT . DS . 'config' . DS);
+define('CACHE', TMP . 'cache' . DS);
 
-    error_reporting(E_ALL);
+// @codingStandardsIgnoreStart
+@mkdir(CACHE);
+// @codingStandardsIgnoreEnd
+
+Configure::write('debug', true);
+Configure::write('App', [
+    'namespace' => 'TestApp',
+    'paths' => [
+        'plugins' => [ROOT . 'Plugin' . DS],
+        'templates' => [ROOT . 'templates' . DS],
+    ],
+]);
+
+Cache::setConfig([
+    '_cake_core_' => [
+        'engine' => 'File',
+        'prefix' => 'cake_core_',
+        'serialize' => true,
+    ],
+    '_cake_model_' => [
+        'engine' => 'File',
+        'prefix' => 'cake_model_',
+        'serialize' => true,
+    ],
+]);
+
+if (!getenv('DB_URL')) {
+    putenv('DB_URL=sqlite:///:memory:');
 }
+ConnectionManager::setConfig('test', ['url' => getenv('DB_URL')]);
+Router::reload();
+Security::setSalt('YJfIxfs2guVoUubWDYhG93b0qyJfIxfs2guwvniR2G0FgaC9mi');
+
+Plugin::getCollection()->add(new \Authentication\Plugin());
+date_default_timezone_set('UTC');
+
+$_SERVER['PHP_SELF'] = '/';

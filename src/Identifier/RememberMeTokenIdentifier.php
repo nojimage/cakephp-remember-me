@@ -1,8 +1,8 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Identifier;
 
-use ArrayAccess;
 use Authentication\Identifier\AbstractIdentifier;
 use Authentication\Identifier\Resolver\OrmResolver;
 use Authentication\Identifier\Resolver\ResolverAwareTrait;
@@ -15,7 +15,7 @@ use RuntimeException;
 /**
  * Class RememberMeTokenIdentifier
  *
- * @method OrmResolver getResolver()
+ * @method \Authentication\Identifier\Resolver\OrmResolver getResolver()
  */
 class RememberMeTokenIdentifier extends AbstractIdentifier
 {
@@ -23,7 +23,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
         buildResolver as traitBuildResolver;
     }
 
-    const CREDENTIAL_SERIES = 'series';
+    protected const CREDENTIAL_SERIES = 'series';
 
     /**
      * Default configuration.
@@ -46,9 +46,9 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     ];
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    protected function buildResolver($config)
+    protected function buildResolver($config): OrmResolver
     {
         $instance = $this->traitBuildResolver($config);
 
@@ -61,7 +61,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function identify(array $credentials)
     {
@@ -102,9 +102,9 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      * Find a user record using the username/identifier provided.
      *
      * @param string $identifier The username/identifier.
-     * @return ArrayAccess|array|null
+     * @return \ArrayAccess|array|\Cake\Datasource\EntityInterface|null
      */
-    protected function _findIdentity($identifier)
+    protected function _findIdentity(string $identifier)
     {
         $fields = $this->getConfig('fields.' . self::CREDENTIAL_USERNAME);
         $conditions = [];
@@ -118,14 +118,14 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     /**
      * find user's remember me token.
      *
-     * @param EntityInterface $identity the identity
+     * @param \Cake\Datasource\EntityInterface $identity the identity
      * @param string $series the credentials series
-     * @return EntityInterface|null
+     * @return \Cake\Datasource\EntityInterface|null
      */
-    protected function _findToken(EntityInterface $identity, $series)
+    protected function _findToken(EntityInterface $identity, string $series): ?EntityInterface
     {
         $userModel = $identity->getSource();
-        if ($userModel === null) {
+        if ($userModel === '') {
             throw new InvalidArgumentException('Can\'t get user model from identity.');
         }
 
@@ -144,11 +144,11 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     /**
      * verify user token, match and expires
      *
-     * @param EntityInterface $token the remember me token
+     * @param \Cake\Datasource\EntityInterface $token the remember-me token
      * @param string $verifyToken token from credentials
      * @return bool
      */
-    protected function _verifyToken(EntityInterface $token, $verifyToken)
+    protected function _verifyToken(EntityInterface $token, string $verifyToken): bool
     {
         if ($token['token'] !== $verifyToken) {
             $this->_errors[] = 'token does not match';
@@ -168,10 +168,10 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     /**
      * drop invalid token
      *
-     * @param EntityInterface $token the remember-me token
+     * @param \Cake\Datasource\EntityInterface $token the remember-me token
      * @return bool
      */
-    protected function _dropInvalidToken($token)
+    protected function _dropInvalidToken(EntityInterface $token): bool
     {
         $tokenStorageTable = $this->getResolver()->getTableLocator()->get($this->getConfig('tokenStorageModel'));
 

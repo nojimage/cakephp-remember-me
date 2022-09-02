@@ -1,9 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Test\TestCase\Model\Table;
 
 use Cake\I18n\FrozenTime;
-use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use RememberMe\Model\Table\RememberMeTokensTable;
 
@@ -33,10 +33,10 @@ class RememberMeTokensTableTest extends TestCase
      *
      * @return void
      */
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
-        $this->RememberMeTokens = TableRegistry::get('RememberMeTokens', ['className' => RememberMeTokensTable::class]);
+        $this->RememberMeTokens = $this->getTableLocator()->get('RememberMeTokens', ['className' => RememberMeTokensTable::class]);
     }
 
     /**
@@ -44,7 +44,7 @@ class RememberMeTokensTableTest extends TestCase
      *
      * @return void
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         unset($this->RememberMeTokens);
 
@@ -56,7 +56,7 @@ class RememberMeTokensTableTest extends TestCase
      *
      * @return void
      */
-    public function testInitialize()
+    public function testInitialize(): void
     {
         $this->markTestIncomplete('Not implemented yet.');
     }
@@ -66,7 +66,7 @@ class RememberMeTokensTableTest extends TestCase
      *
      * @return void
      */
-    public function testValidationDefault()
+    public function testValidationDefault(): void
     {
         $this->markTestIncomplete('Not implemented yet.');
     }
@@ -76,12 +76,12 @@ class RememberMeTokensTableTest extends TestCase
      *
      * @return void
      */
-    public function testBuildRules()
+    public function testBuildRules(): void
     {
         $this->markTestIncomplete('Not implemented yet.');
     }
 
-    public function testDropExpired()
+    public function testDropExpired(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:33');
         $deleteCount = $this->RememberMeTokens->dropExpired();
@@ -94,7 +94,7 @@ class RememberMeTokensTableTest extends TestCase
         $this->assertCount(3, $this->RememberMeTokens->find()->all());
     }
 
-    public function testDropExpiredWithArgs()
+    public function testDropExpiredWithArgs(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:34');
         $deleteCount = $this->RememberMeTokens->dropExpired('Users');

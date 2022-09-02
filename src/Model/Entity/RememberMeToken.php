@@ -1,21 +1,21 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Model\Entity;
 
-use Cake\I18n\FrozenTime;
 use Cake\ORM\Entity;
 
 /**
  * RememberMeToken Entity
  *
  * @property int $id
- * @property FrozenTime $created
- * @property FrozenTime $modified
+ * @property \Cake\I18n\FrozenTime $created
+ * @property \Cake\I18n\FrozenTime $modified
  * @property string $model
  * @property string $foreign_id
  * @property string $series
  * @property string $token
- * @property FrozenTime $expires
+ * @property \Cake\I18n\FrozenTime $expires
  */
 class RememberMeToken extends Entity
 {

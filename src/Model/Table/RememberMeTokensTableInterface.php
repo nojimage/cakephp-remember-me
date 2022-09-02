@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Model\Table;
 
@@ -10,9 +11,9 @@ interface RememberMeTokensTableInterface
     /**
      * drop expired tokens
      *
-     * @param string $userModel target user model
-     * @param string $foreignId target user id
-     * @return bool
+     * @param string|null $userModel target user model
+     * @param string|null $foreignId target user id
+     * @return int
      */
-    public function dropExpired($userModel = null, $foreignId = null);
+    public function dropExpired(?string $userModel = null, ?string $foreignId = null): int;
 }

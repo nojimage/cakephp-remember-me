@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Test\Fixture;
 
@@ -6,7 +7,6 @@ use Cake\TestSuite\Fixture\TestFixture;
 
 /**
  * AuthUsersFixture
- *
  */
 class AuthUsersFixture extends TestFixture
 {

@@ -1,10 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Auth;
 
 use Cake\Auth\BaseAuthenticate;
 use Cake\Controller\ComponentRegistry;
-use Cake\Controller\Component\AuthComponent;
 use Cake\Datasource\EntityInterface;
 use Cake\Datasource\ModelAwareTrait;
 use Cake\Datasource\RepositoryInterface;
@@ -14,15 +14,15 @@ use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\I18n\FrozenTime;
 use Cake\ORM\Query;
-use Cake\ORM\Table;
 use Cake\Utility\Hash;
 use InvalidArgumentException;
 use RememberMe\Authenticator\EncryptCookieTrait;
 use RememberMe\Model\Entity\RememberMeToken;
-use RememberMe\Model\Table\RememberMeTokensTableInterface;
 
 /**
  * Cookie Authenticate
+ *
+ * @deprecated 4.0.0 Use the cakephp/authentication and CookieAuthenticator instead.
  */
 class CookieAuthenticate extends BaseAuthenticate
 {
@@ -34,7 +34,7 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * Constructor
      *
-     * @param ComponentRegistry $registry components
+     * @param \Cake\Controller\ComponentRegistry $registry components
      * @param array $config authenticate config
      */
     public function __construct(ComponentRegistry $registry, array $config = [])
@@ -63,8 +63,8 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * authenticate
      *
-     * @param ServerRequest $request a Request instance
-     * @param Response $response a Response instance
+     * @param \Cake\Http\ServerRequest $request a Request instance
+     * @param \Cake\Http\Response $response a Response instance
      * @return array|false
      */
     public function authenticate(ServerRequest $request, Response $response)
@@ -75,7 +75,7 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * get user from cookie
      *
-     * @param ServerRequest $request a Request instance.
+     * @param \Cake\Http\ServerRequest $request a Request instance.
      * @return array|bool
      */
     public function getUser(ServerRequest $request)
@@ -83,87 +83,82 @@ class CookieAuthenticate extends BaseAuthenticate
         if (!$this->checkFields($request)) {
             return false;
         }
-        $cookieParams = static::decodeCookie($this->getCookie($request));
 
-        $user = $this->findUserAndTokenBySeries($cookieParams['username'], $cookieParams['series']);
+        $credentials = static::decodeCookie($this->getCookie($request));
+
+        $user = $this->findUserAndTokenBySeries($credentials['username'], $credentials['series']);
 
         if ($user === null) {
             return false;
         }
 
-        if (!$this->verifyToken($user, $cookieParams['token'])) {
+        if (!$this->verifyToken($user, $credentials['token'])) {
             $this->dropInvalidToken($user);
 
             return false;
         }
 
         // remove password field
-        $userArray = Hash::remove($user->toArray(), $this->getConfig('fields.password'));
-
-        return $userArray;
+        return Hash::remove($user->toArray(), $this->getConfig('fields.password'));
     }
 
     /**
      * Checks the fields to ensure they are supplied.
      *
-     * @param ServerRequest $request The request that contains login information.
+     * @param \Cake\Http\ServerRequest $request The request that contains login information.
      * @return bool False if the fields have not been supplied. True if they exist.
      */
-    protected function checkFields(ServerRequest $request)
+    protected function checkFields(ServerRequest $request): bool
     {
         $cookie = $this->getCookie($request);
-        if (empty($cookie) || !is_string($cookie)) {
+        if (empty($cookie)) {
             return false;
         }
 
-        $decoded = $this->decodeCookie($cookie);
-        if (empty($decoded['username']) || empty($decoded['series']) || empty($decoded['token'])) {
+        try {
+            $credentials = self::decodeCookie($cookie);
+        } catch (InvalidArgumentException $e) {
             return false;
         }
 
-        return true;
+        return isset($credentials['username'], $credentials['series'], $credentials['token']);
     }
 
     /**
      * get login token form cookie
      *
-     * @param ServerRequest $request a Request instance
+     * @param \Cake\Http\ServerRequest $request a Request instance
      * @return string
      */
-    protected function getCookie(ServerRequest $request)
+    protected function getCookie(ServerRequest $request): string
     {
-        return $request->getCookie($this->getConfig('cookie.name'));
+        $cookie = $request->getCookie($this->getConfig('cookie.name'), '');
+
+        return $cookie ?? '';
     }
 
     /**
      * set login token to cookie
      *
-     * @param Response $response a Response instance.
+     * @param \Cake\Http\Response $response a Response instance.
      * @param string $cookie encrypted login token
-     * @return Response
+     * @return \Cake\Http\Response
      */
-    protected function setCookie(Response $response, $cookie)
+    protected function setCookie(Response $response, string $cookie): Response
     {
         $config = $this->getConfig('cookie');
         $expires = new FrozenTime($config['expires']);
-        if (class_exists(Cookie::class)) {
-            $cookieObj = new Cookie(
-                $this->getConfig('cookie.name'),
-                $cookie,
-                $expires,
-                $this->getConfig('cookie.path', '/'),
-                $this->getConfig('cookie.domain', ''),
-                $this->getConfig('cookie.secure', true),
-                $this->getConfig('cookie.httpOnly', true)
-            );
+        $cookieObj = new Cookie(
+            $this->getConfig('cookie.name'),
+            $cookie,
+            $expires,
+            $this->getConfig('cookie.path', '/'),
+            $this->getConfig('cookie.domain', ''),
+            $this->getConfig('cookie.secure', true),
+            $this->getConfig('cookie.httpOnly', true)
+        );
 
-            return $response->withCookie($cookieObj);
-        }
-
-        $config['value'] = $cookie;
-        $config['expire'] = $expires->format('U');
-
-        return $response->withCookie($this->getConfig('cookie.name'), $config);
+        return $response->withCookie($cookieObj);
     }
 
     /**
@@ -171,9 +166,9 @@ class CookieAuthenticate extends BaseAuthenticate
      *
      * @param array $user logged in user info
      * @param string $token login token
-     * @return EntityInterface|false
+     * @return \Cake\Datasource\EntityInterface|false
      */
-    protected function saveToken(array $user, $token)
+    protected function saveToken(array $user, string $token)
     {
         $userModel = $this->getConfig('userModel');
         $userTable = $this->getUsersTable();
@@ -209,7 +204,7 @@ class CookieAuthenticate extends BaseAuthenticate
      *
      * @return void
      */
-    protected function initializeUserModel()
+    protected function initializeUserModel(): void
     {
         $userModel = $this->getConfig('userModel');
 
@@ -230,9 +225,9 @@ class CookieAuthenticate extends BaseAuthenticate
      *
      * @param string $username request username
      * @param string $series request series
-     * @return EntityInterface|null
+     * @return \Cake\Datasource\EntityInterface|null
      */
-    protected function findUserAndTokenBySeries($username, $series)
+    protected function findUserAndTokenBySeries(string $username, string $series): ?EntityInterface
     {
         $this->initializeUserModel();
 
@@ -255,7 +250,7 @@ class CookieAuthenticate extends BaseAuthenticate
         // change mapping
         $matchingData = $user->get('_matchingData');
         $user->set(static::$userTokenFieldName, $matchingData['RememberMeTokens']);
-        $user->unsetProperty('_matchingData');
+        $user->unset('_matchingData');
 
         return $user;
     }
@@ -263,11 +258,11 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * verify user token, match and expires
      *
-     * @param EntityInterface $user logged in user info
+     * @param \Cake\Datasource\EntityInterface $user logged in user info
      * @param string $verifyToken token from cookie
      * @return bool
      */
-    protected function verifyToken(EntityInterface $user, $verifyToken)
+    protected function verifyToken(EntityInterface $user, string $verifyToken): bool
     {
         $token = $this->getTokenFromUserEntity($user);
 
@@ -285,10 +280,10 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * drop invalid token
      *
-     * @param EntityInterface $user logged in user info
+     * @param \Cake\Datasource\EntityInterface $user logged in user info
      * @return bool
      */
-    protected function dropInvalidToken(EntityInterface $user)
+    protected function dropInvalidToken(EntityInterface $user): bool
     {
         $token = $this->getTokenFromUserEntity($user);
 
@@ -298,11 +293,11 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * get token
      *
-     * @param EntityInterface $user logged in user info
-     * @return RememberMeToken
-     * @throws InvalidArgumentException
+     * @param \Cake\Datasource\EntityInterface $user logged in user info
+     * @return \RememberMe\Model\Entity\RememberMeToken
+     * @throws \InvalidArgumentException
      */
-    protected function getTokenFromUserEntity(EntityInterface $user)
+    protected function getTokenFromUserEntity(EntityInterface $user): RememberMeToken
     {
         if (empty($user->{static::$userTokenFieldName})) {
             throw new InvalidArgumentException('user entity has not matching token data.');
@@ -318,7 +313,7 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * @return array
      */
-    public function implementedEvents()
+    public function implementedEvents(): array
     {
         return [
             'Auth.afterIdentify' => 'onAfterIdentify',
@@ -329,20 +324,23 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * event on 'Auth.afterIdentify'
      *
-     * @param Event $event a Event instance
+     * @param \Cake\Event\Event $event a Event instance
      * @param array $user logged in user info
-     * @return array|null
+     * @return array
      */
-    public function onAfterIdentify(Event $event, array $user)
+    public function onAfterIdentify(Event $event, array $user): array
     {
+        /** @var \Cake\Controller\Component\AuthComponent $authComponent */
         $authComponent = $event->getSubject();
-        /* @var $authComponent AuthComponent */
+        $controller = $authComponent->getController();
+        $request = $controller->getRequest();
+        $response = $controller->getResponse();
 
         if (!$user) {
             // when authenticate failed, clear cookie token.
-            $authComponent->response = $this->setCookie($authComponent->response, '');
+            $controller->setResponse($this->setCookie($response, ''));
 
-            return null;
+            return [];
         }
 
         if ($this->getConfig('dropExpiredToken')) {
@@ -350,14 +348,14 @@ class CookieAuthenticate extends BaseAuthenticate
             $this->getTokensTable()->dropExpired($this->getConfig('userModel'));
         }
 
-        if ($this->getConfig('always') || $authComponent->request->getData($this->getConfig('inputKey'))) {
+        if ($this->getConfig('always') || $request->getData($this->getConfig('inputKey'))) {
             // -- set token to cookie & session
             // save token
             $token = $this->saveToken($user, static::_generateToken($user));
 
             if ($token) {
                 // write cookie
-                $authComponent->response = $this->setLoginTokenToCookie($authComponent->response, $user, $token);
+                $controller->setResponse($this->setLoginTokenToCookie($response, $user, $token));
                 // set token to user
                 $user[static::$userTokenFieldName] = $token->toArray();
 
@@ -365,18 +363,18 @@ class CookieAuthenticate extends BaseAuthenticate
             }
         }
 
-        return null;
+        return [];
     }
 
     /**
      * Generate and set login token to Response
      *
-     * @param Response $response a Response instance
+     * @param \Cake\Http\Response $response a Response instance
      * @param array $user logged in user info
-     * @param RememberMeToken|EntityInterface $token a Token instance
-     * @return Response
+     * @param \RememberMe\Model\Entity\RememberMeToken|\Cake\Datasource\EntityInterface $token a Token instance
+     * @return \Cake\Http\Response
      */
-    protected function setLoginTokenToCookie(Response $response, array $user, EntityInterface $token)
+    protected function setLoginTokenToCookie(Response $response, array $user, EntityInterface $token): Response
     {
         if (isset($user[$this->getConfig('fields.username')])) {
             // write cookie
@@ -391,14 +389,16 @@ class CookieAuthenticate extends BaseAuthenticate
     /**
      * event on 'Auth.logout'
      *
-     * @param Event $event a Event instance
+     * @param \Cake\Event\Event $event a Event instance
      * @param array $user logged in user info
      * @return bool
      */
-    public function onLogout(Event $event, array $user)
+    public function onLogout(Event $event, array $user): bool
     {
+        /** @var \Cake\Controller\Component\AuthComponent $authComponent */
         $authComponent = $event->getSubject();
-        $authComponent->response = $this->setCookie($authComponent->response, '');
+        $controller = $authComponent->getController();
+        $controller->setResponse($this->setCookie($controller->getResponse(), ''));
 
         // drop token
         $this->dropToken($user);
@@ -412,7 +412,7 @@ class CookieAuthenticate extends BaseAuthenticate
      * @param array $user logged in user info
      * @return bool
      */
-    protected function dropToken(array $user)
+    protected function dropToken(array $user): bool
     {
         $token = $this->getTokenFromUserArray($user);
 
@@ -427,36 +427,35 @@ class CookieAuthenticate extends BaseAuthenticate
      * Get token entity from user data array
      *
      * @param array $user logged in user info
-     * @return RememberMeToken|null
+     * @return \RememberMe\Model\Entity\RememberMeToken|null
      */
-    protected function getTokenFromUserArray(array $user)
+    protected function getTokenFromUserArray(array $user): ?RememberMeToken
     {
         if (empty($user[static::$userTokenFieldName])) {
             return null;
         }
 
         $tokenTable = $this->getTokensTable();
-        $token = $tokenTable->find()
+
+        return $tokenTable->find()
             ->where([
                 'id' => $user[static::$userTokenFieldName]['id'],
             ])
             ->first();
-
-        return $token;
     }
 
     /**
-     * @return Table|RepositoryInterface
+     * @return \Cake\ORM\Table
      */
-    protected function getUsersTable()
+    protected function getUsersTable(): RepositoryInterface
     {
         return $this->loadModel($this->getConfig('userModel'));
     }
 
     /**
-     * @return RememberMeTokensTableInterface|RepositoryInterface
+     * @return \RememberMe\Model\Table\RememberMeTokensTableInterface
      */
-    protected function getTokensTable()
+    protected function getTokensTable(): RepositoryInterface
     {
         return $this->loadModel($this->getConfig('tokenStorageModel'));
     }

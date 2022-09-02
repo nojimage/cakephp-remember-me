@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Test\Fixture;
 
@@ -6,7 +7,6 @@ use Cake\TestSuite\Fixture\TestFixture;
 
 /**
  * RememberMeTokensFixture
- *
  */
 class RememberMeTokensFixture extends TestFixture
 {
@@ -35,7 +35,7 @@ class RememberMeTokensFixture extends TestFixture
     ];
     // @codingStandardsIgnoreEnd
 
-    public function init()
+    public function init(): void
     {
         $this->records[] = [
             'id' => 1,

@@ -1,11 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace RememberMe\Test\TestCase\Authenticator;
 
 use Authentication\Authenticator\Result;
+use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierCollection;
 use Cake\Datasource\EntityInterface;
-use Cake\Http\Cookie\Cookie;
+use Cake\Http\Cookie\CookieInterface;
 use Cake\Http\Response;
 use Cake\Http\ServerRequestFactory;
 use Cake\I18n\FrozenTime;
@@ -14,8 +16,6 @@ use Cake\ORM\TableRegistry;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RememberMe\Authenticator\CookieAuthenticator;
-use RememberMe\Model\Entity\RememberMeToken;
-use RememberMe\Model\Table\RememberMeTokensTable;
 use RememberMe\Test\TestCase\RememberMeTestCase as TestCase;
 
 class CookieAuthenticatorTest extends TestCase
@@ -25,7 +25,7 @@ class CookieAuthenticatorTest extends TestCase
      */
     private $Tokens;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->Tokens = TableRegistry::getTableLocator()->get('RememberMe.RememberMeTokens');
@@ -34,7 +34,7 @@ class CookieAuthenticatorTest extends TestCase
     /**
      * @return void
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         FrozenTime::setTestNow();
         parent::tearDown();
@@ -43,7 +43,7 @@ class CookieAuthenticatorTest extends TestCase
     /**
      * @return void
      */
-    public function testAuthenticateCredentialsNotPresent()
+    public function testAuthenticateCredentialsNotPresent(): void
     {
         $identifiers = new IdentifierCollection([
             'RememberMe.RememberMeToken' => [
@@ -57,19 +57,18 @@ class CookieAuthenticatorTest extends TestCase
         $request = ServerRequestFactory::fromGlobals(
             ['REQUEST_URI' => '/testpath']
         );
-        $response = new Response();
 
         $authenticator = new CookieAuthenticator($identifiers);
-        $result = $authenticator->authenticate($request, $response);
+        $result = $authenticator->authenticate($request);
 
         $this->assertInstanceOf(Result::class, $result);
-        $this->assertEquals(Result::FAILURE_CREDENTIALS_MISSING, $result->getStatus());
+        $this->assertEquals(ResultInterface::FAILURE_CREDENTIALS_MISSING, $result->getStatus());
     }
 
     /**
      * @return void
      */
-    public function testAuthenticateEmptyCookie()
+    public function testAuthenticateEmptyCookie(): void
     {
         $identifiers = new IdentifierCollection([
             'RememberMe.RememberMeToken' => [
@@ -88,19 +87,18 @@ class CookieAuthenticatorTest extends TestCase
                 'rememberMe' => '',
             ]
         );
-        $response = new Response();
 
         $authenticator = new CookieAuthenticator($identifiers);
-        $result = $authenticator->authenticate($request, $response);
+        $result = $authenticator->authenticate($request);
 
         $this->assertInstanceOf(Result::class, $result);
-        $this->assertEquals(Result::FAILURE_CREDENTIALS_INVALID, $result->getStatus());
+        $this->assertEquals(ResultInterface::FAILURE_CREDENTIALS_MISSING, $result->getStatus());
     }
 
     /**
      * @return void
      */
-    public function testAuthenticateUnencryptedCookie()
+    public function testAuthenticateUnencryptedCookie(): void
     {
         $identifiers = new IdentifierCollection([
             'RememberMe.RememberMeToken' => [
@@ -119,20 +117,19 @@ class CookieAuthenticatorTest extends TestCase
                 'rememberMe' => 'unencrypted',
             ]
         );
-        $response = new Response();
 
         $authenticator = new CookieAuthenticator($identifiers);
-        $result = $authenticator->authenticate($request, $response);
+        $result = $authenticator->authenticate($request);
 
         $this->assertInstanceOf(Result::class, $result);
-        $this->assertEquals(Result::FAILURE_CREDENTIALS_INVALID, $result->getStatus());
-        $this->assertSame(['Cookie token is invalid'], $result->getErrors());
+        $this->assertEquals(ResultInterface::FAILURE_CREDENTIALS_INVALID, $result->getStatus());
+        $this->assertSame(['Cookie token is invalid', 'Can\'t decrypt cookie.'], $result->getErrors());
     }
 
     /**
      * @return void
      */
-    public function testAuthenticateInvalidCookie()
+    public function testAuthenticateInvalidCookie(): void
     {
         $identifiers = new IdentifierCollection([
             'RememberMe.RememberMeToken' => [
@@ -152,20 +149,19 @@ class CookieAuthenticatorTest extends TestCase
                 'rememberMe' => $encryptedToken,
             ]
         );
-        $response = new Response();
 
         $authenticator = new CookieAuthenticator($identifiers);
-        $result = $authenticator->authenticate($request, $response);
+        $result = $authenticator->authenticate($request);
 
         $this->assertInstanceOf(Result::class, $result);
-        $this->assertEquals(Result::FAILURE_IDENTITY_NOT_FOUND, $result->getStatus());
+        $this->assertEquals(ResultInterface::FAILURE_IDENTITY_NOT_FOUND, $result->getStatus());
         $this->assertSame(['RememberMeToken' => ['token does not match']], $result->getErrors());
     }
 
     /**
      * @return void
      */
-    public function testAuthenticateExpired()
+    public function testAuthenticateExpired(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:34');
         $identifiers = new IdentifierCollection([
@@ -186,20 +182,19 @@ class CookieAuthenticatorTest extends TestCase
                 'rememberMe' => $encryptedToken,
             ]
         );
-        $response = new Response();
 
         $authenticator = new CookieAuthenticator($identifiers);
-        $result = $authenticator->authenticate($request, $response);
+        $result = $authenticator->authenticate($request);
 
         $this->assertInstanceOf(Result::class, $result);
-        $this->assertEquals(Result::FAILURE_IDENTITY_NOT_FOUND, $result->getStatus());
+        $this->assertEquals(ResultInterface::FAILURE_IDENTITY_NOT_FOUND, $result->getStatus());
         $this->assertSame(['RememberMeToken' => ['token expired']], $result->getErrors());
     }
 
     /**
      * @return void
      */
-    public function testAuthenticateValid()
+    public function testAuthenticateValid(): void
     {
         FrozenTime::setTestNow('2017-10-01 11:22:33');
         $identifiers = new IdentifierCollection([
@@ -220,13 +215,12 @@ class CookieAuthenticatorTest extends TestCase
                 'rememberMe' => $encryptedToken,
             ]
         );
-        $response = new Response();
 
         $authenticator = new CookieAuthenticator($identifiers);
-        $result = $authenticator->authenticate($request, $response);
+        $result = $authenticator->authenticate($request);
 
         $this->assertInstanceOf(Result::class, $result);
-        $this->assertEquals(Result::SUCCESS, $result->getStatus());
+        $this->assertEquals(ResultInterface::SUCCESS, $result->getStatus());
         $this->assertInstanceOf(EntityInterface::class, $result->getData());
         $this->assertSame('foo', $result->getData()['username']);
     }
@@ -234,7 +228,7 @@ class CookieAuthenticatorTest extends TestCase
     /**
      * @return void
      */
-    public function testPersistIdentity()
+    public function testPersistIdentity(): void
     {
         $identifiers = new IdentifierCollection([
             'Authentication.Password',
@@ -257,18 +251,18 @@ class CookieAuthenticatorTest extends TestCase
 
         $result = $authenticator->persistIdentity($request, $response, $identity);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertInstanceOf(RequestInterface::class, $result['request']);
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
         $token = $this->Tokens->find()->orderDesc('id')->first();
-        /* @var $token RememberMeToken */
+        /** @var RememberMeToken $token */
         $this->assertSame('AuthUsers', $token->model);
         $this->assertSame('1', $token->foreign_id);
 
         $cookieHeader = $result['response']->getHeaderLine('Set-Cookie');
-        $this->assertContains('rememberMe=', $cookieHeader);
-        $this->assertContains('expires=' . $token->expires->setTimezone('GMT')->format(Cookie::EXPIRES_FORMAT), $cookieHeader);
+        $this->assertStringContainsString('rememberMe=', $cookieHeader);
+        $this->assertStringContainsString('expires=' . $token->expires->setTimezone('GMT')->format(CookieInterface::EXPIRES_FORMAT), $cookieHeader);
         $encrypted = preg_replace('/\ArememberMe=(.+?);.*/', '$1', $cookieHeader);
         $decoded = CookieAuthenticator::decodeCookie(rawurldecode($encrypted));
         $this->assertSame($token->series, $decoded['series']);
@@ -277,7 +271,7 @@ class CookieAuthenticatorTest extends TestCase
         // Testing that the field is not present
         $request = $request->withParsedBody([]);
         $result = $authenticator->persistIdentity($request, $response, $identity);
-        $this->assertNotContains('rememberMe', $result['response']->getHeaderLine('Set-Cookie'));
+        $this->assertStringNotContainsString('rememberMe', $result['response']->getHeaderLine('Set-Cookie'));
 
         // Testing a different field name
         $request = $request->withParsedBody([
@@ -287,13 +281,13 @@ class CookieAuthenticatorTest extends TestCase
             'rememberMeField' => 'other_field',
         ]);
         $result = $authenticator->persistIdentity($request, $response, $identity);
-        $this->assertContains('rememberMe=', $result['response']->getHeaderLine('Set-Cookie'));
+        $this->assertStringContainsString('rememberMe=', $result['response']->getHeaderLine('Set-Cookie'));
     }
 
     /**
      * @return void
      */
-    public function testPersistIdentityCanTwice()
+    public function testPersistIdentityCanTwice(): void
     {
         $identifiers = new IdentifierCollection([
             'Authentication.Password',
@@ -318,7 +312,7 @@ class CookieAuthenticatorTest extends TestCase
         $authenticator->persistIdentity($request, $response, $identity);
 
         $token = $this->Tokens->find()->orderDesc('id')->first();
-        /* @var $token RememberMeToken */
+        /** @var RememberMeToken $token */
         $this->assertSame('AuthUsers', $token->model);
         $this->assertSame('1', $token->foreign_id);
 
@@ -328,7 +322,7 @@ class CookieAuthenticatorTest extends TestCase
     /**
      * @return void
      */
-    public function testDropExpiredTokenOnPersistIdentity()
+    public function testDropExpiredTokenOnPersistIdentity(): void
     {
         $identifiers = new IdentifierCollection(['Authentication.Password']);
         $request = ServerRequestFactory::fromGlobals(
@@ -350,12 +344,12 @@ class CookieAuthenticatorTest extends TestCase
 
         $result = $authenticator->persistIdentity($request, $response, $identity);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertInstanceOf(RequestInterface::class, $result['request']);
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
         $cookieHeader = $result['response']->getHeaderLine('Set-Cookie');
-        $this->assertContains('rememberMe=', $cookieHeader);
+        $this->assertStringContainsString('rememberMe=', $cookieHeader);
 
         $this->assertCount(1, $this->Tokens->find()->all(), 'then deleted expired tokens');
     }
@@ -363,7 +357,7 @@ class CookieAuthenticatorTest extends TestCase
     /**
      * @return void
      */
-    public function testClearIdentity()
+    public function testClearIdentity(): void
     {
         $identifiers = new IdentifierCollection([
             'RememberMe.RememberMeToken',
@@ -377,7 +371,7 @@ class CookieAuthenticatorTest extends TestCase
         $authenticator = new CookieAuthenticator($identifiers);
 
         $result = $authenticator->clearIdentity($request, $response);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertInstanceOf(RequestInterface::class, $result['request']);
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
@@ -388,7 +382,7 @@ class CookieAuthenticatorTest extends TestCase
     /**
      * @return void
      */
-    public function testClearIdentityWithCookie()
+    public function testClearIdentityWithCookie(): void
     {
         $identifiers = new IdentifierCollection([
             'RememberMe.RememberMeToken',
@@ -415,7 +409,7 @@ class CookieAuthenticatorTest extends TestCase
         $authenticator = new CookieAuthenticator($identifiers);
 
         $result = $authenticator->clearIdentity($request, $response);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertInstanceOf(RequestInterface::class, $result['request']);
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
