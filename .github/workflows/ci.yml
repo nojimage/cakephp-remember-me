@@ -15,11 +15,11 @@ on:
 
 jobs:
   testsuite:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        cakephp-version: ['3.8.*', '3.9.*']
+        cakephp-version: ['3.8.*', '3.9.*', '3.10.*']
         php-version: ['7.2', '7.4']
         db-type: ['mysql']
         prefer-lowest: ['']
@@ -59,7 +59,7 @@ jobs:
             coverage: 'no'
 
           - php-version: '7.4'
-            cakephp-version: '3.9.*'
+            cakephp-version: '3.10.*'
             db-type: 'mysql'
             prefer-lowest: ''
             coverage: 'coverage'
@@ -141,7 +141,7 @@ jobs:
 
   cs-stan:
     name: Coding Standard & Static Analysis
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v1
@@ -151,7 +151,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.2'
+          php-version: '7.4'
           extensions: mbstring, intl, apcu
           coverage: none
 
