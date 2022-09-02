@@ -10,7 +10,6 @@ use Cake\ORM\Table;
  */
 class AuthUsersTable extends Table
 {
-
     /**
      * @param Query $query
      * @return Query

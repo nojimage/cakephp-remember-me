@@ -7,7 +7,6 @@ namespace RememberMe\Model\Table;
  */
 interface RememberMeTokensTableInterface
 {
-
     /**
      * drop expired tokens
      *

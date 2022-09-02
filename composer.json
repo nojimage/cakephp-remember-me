@@ -12,7 +12,7 @@
   "require-dev": {
     "cakephp/authentication": "^1.0",
     "cakephp/cakephp": "^3.5",
-    "cakephp/cakephp-codesniffer": "^3.1",
+    "cakephp/cakephp-codesniffer": "^3.3",
     "phpunit/phpunit": "^5.7|^6.0"
   },
   "autoload": {

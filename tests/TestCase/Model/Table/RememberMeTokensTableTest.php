@@ -12,7 +12,6 @@ use RememberMe\Model\Table\RememberMeTokensTable;
  */
 class RememberMeTokensTableTest extends TestCase
 {
-
     /**
      * Test subject
      *

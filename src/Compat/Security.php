@@ -11,7 +11,6 @@ use Cake\Utility\Security as CoreSecurity;
  */
 class Security extends CoreSecurity
 {
-
     /**
      * Gets the HMAC salt to be used for encryption/decryption routines.
      *
