@@ -31,7 +31,7 @@ php composer.phar require nojimage/cakephp-remember-me
 
 アプリケーションの `src/Application.php` ファイルへ、次の行を追加します:
 
-```shell
+```php
 $this->addPlugin('RememberMe');
 ```
 
@@ -43,7 +43,7 @@ bin/cake plugin load RememberMe
 
 マイグレーションを実行し、データベースへ必要なテーブルを作成します:
 
-```
+```shell
 bin/cake migrations migrate -p RememberMe
 ```
 

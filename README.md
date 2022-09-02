@@ -31,7 +31,7 @@ php composer.phar require nojimage/cakephp-remember-me
 
 Load the plugin by adding the following statement in your project's `src/Application.php`:
 
-```shell
+```php
 $this->addPlugin('RememberMe');
 ```
 
@@ -43,7 +43,7 @@ bin/cake plugin load RememberMe
 
 Run migration:
 
-```
+```shell
 bin/cake migrations migrate -p RememberMe
 ```
 
