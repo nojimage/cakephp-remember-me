@@ -19,6 +19,7 @@ use Cake\Utility\Hash;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use RememberMe\Model\Table\RememberMeTokensTableInterface;
 
 /**
  * Class CookieAuthenticator
@@ -170,7 +171,10 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $userModel = null;
         if ($identity instanceof EntityInterface) {
             $userModel = $identity->getSource();
-        } elseif ($identifier = $this->_getSuccessfulIdentifier()) {
+        } elseif (
+            ($identifier = $this->_getSuccessfulIdentifier())
+            && method_exists($identifier, 'getResolver')
+        ) {
             $userModel = $identifier->getResolver()->getConfig('userModel');
         }
         if ($userModel === null) {
@@ -178,6 +182,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         }
 
         $userTable = $this->getTableLocator()->get($userModel);
+        /** @var RememberMeTokensTableInterface $tokenTable */
         $tokenTable = $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
 
         if ($this->getConfig('dropExpiredToken')) {
@@ -198,7 +203,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     }
 
     /**
-     * @return IdentifierInterface
+     * @return IdentifierInterface|null
      */
     protected function _getSuccessfulIdentifier()
     {

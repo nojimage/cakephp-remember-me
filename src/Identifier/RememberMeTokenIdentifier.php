@@ -52,7 +52,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     {
         $instance = $this->traitBuildResolver($config);
 
-        if (!($instance instanceof OrmResolver)) {
+        if (!$instance instanceof OrmResolver) {
             $message = sprintf('Resolver must implement `%s`.', OrmResolver::class);
             throw new RuntimeException($message);
         }
@@ -77,7 +77,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
 
         $identity = $this->_findIdentity($credentials[self::CREDENTIAL_USERNAME]);
 
-        if ($identity === null || !$identity instanceof EntityInterface) {
+        if (!$identity instanceof EntityInterface) {
             return null;
         }
 
@@ -168,7 +168,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     /**
      * drop invalid token
      *
-     * @param EntityInterface $token the remember me token
+     * @param EntityInterface $token the remember-me token
      * @return bool
      */
     protected function _dropInvalidToken($token)
