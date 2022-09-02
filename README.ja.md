@@ -25,19 +25,25 @@ This library inspired by Barry Jaspan's article "[Improved Persistent Login Cook
 
 以下のようにして、Composer経由でプラグインをCakePHPアプリケーションへ追加します:
 
-```
-composer require nojimage/cakephp-remember-me
+```shell
+php composer.phar require nojimage/cakephp-remember-me:^3.0
 ```
 
-アプリケーションの `bootstrap.php` ファイルへ、次の行を追加します:
+(CakePHP >= 3.6.0) アプリケーションの `src/Application.php` ファイルへ、次の行を追加します:
 
+```php
+$this->addPlugin('RememberMe');
 ```
+
+(CakePHP <= 3.5.x)  アプリケーションの `bootstrap.php` ファイルへ、次の行を追加します:
+
+```php
 Plugin::load('RememberMe');
 ```
 
 マイグレーションを実行し、データベースへ必要なテーブルを作成します:
 
-```
+```shell
 bin/cake migrations migrate -p RememberMe
 ```
 
