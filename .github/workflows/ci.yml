@@ -3,15 +3,16 @@ name: CakePHP Plugin CI
 on:
   push:
     branches:
-      - master
-      - develop
+      - cake4
+      - cake3
   pull_request:
     branches:
       - '*'
   schedule:
     - cron: "0 7 1 * *"
       branches:
-        - master
+        - cake4
+        - cake3
 
 jobs:
   testsuite:
