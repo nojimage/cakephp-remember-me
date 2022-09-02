@@ -6,9 +6,13 @@
   "require": {
     "php": ">=5.6",
     "ext-json": "*",
-    "cakephp/cakephp": "^3.4"
+    "cakephp/core": "^3.5",
+    "cakephp/orm": "^3.5"
   },
   "require-dev": {
+    "cakephp/authentication": "^1.0",
+    "cakephp/cakephp": "^3.5",
+    "cakephp/cakephp-codesniffer": "^3.3",
     "phpunit/phpunit": "^5.7|^6.0"
   },
   "autoload": {
@@ -21,5 +25,12 @@
       "RememberMe\\Test\\": "tests",
       "Cake\\Test\\": "./vendor/cakephp/cakephp/tests"
     }
+  },
+  "scripts": {
+    "cs-check": "phpcs -p --extensions=php --standard=vendor/cakephp/cakephp-codesniffer/CakePHP ./src ./tests",
+    "cs-fix": "phpcbf -p --extensions=php --standard=vendor/cakephp/cakephp-codesniffer/CakePHP ./src ./tests"
+  },
+  "config": {
+    "sort-packages": true
   }
 }

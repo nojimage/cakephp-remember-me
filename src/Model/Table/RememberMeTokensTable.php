@@ -25,7 +25,6 @@ use RememberMe\Model\Entity\RememberMeToken;
  */
 class RememberMeTokensTable extends Table implements RememberMeTokensTableInterface
 {
-
     /**
      * Initialize method
      *
