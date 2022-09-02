@@ -30,15 +30,17 @@ class Security extends CoreSecurity
      * Sets the HMAC salt to be used for encryption/decryption routines.
      *
      * @param string $salt The salt to use for encryption routines.
-     * @return string The currently configured salt
+     * @return void
      * @see Cake\Utility\Security::setSalt()
      */
     public static function setSalt($salt)
     {
-        if (method_exists(CoreSecurity::class, 'getSalt')) {
-            return parent::setSalt($salt);
+        if (method_exists(CoreSecurity::class, 'setSalt')) {
+            parent::setSalt($salt);
+
+            return;
         }
 
-        return parent::salt($salt);
+        parent::salt($salt);
     }
 }
