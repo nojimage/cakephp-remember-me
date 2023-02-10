@@ -5,7 +5,7 @@
         <img alt="Software License" src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square">
     </a>
     <a href="https://github.com/nojimage/cakephp-remember-me/actions" target="_blank">
-        <img alt="Build Status" src="https://img.shields.io/github/workflow/status/nojimage/cakephp-remember-me/CakePHP%20Plugin%20CI?style=flat-square">
+        <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/nojimage/cakephp-remember-me/ci.yml?style=flat-square">
     </a>
     <a href="https://codecov.io/gh/nojimage/cakephp-remember-me" target="_blank">
         <img alt="Codecov" src="https://img.shields.io/codecov/c/github/nojimage/cakephp-remember-me.svg?style=flat-square">
