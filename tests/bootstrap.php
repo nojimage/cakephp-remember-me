@@ -39,8 +39,8 @@ chdir($root);
 require_once 'vendor/cakephp/cakephp/src/basics.php';
 require_once 'vendor/autoload.php';
 
-define('ROOT', $root . DS . 'tests' . DS . 'test_app' . DS);
-define('APP', ROOT . 'App' . DS);
+define('ROOT', $root . DS . 'tests' . DS . 'test_app');
+define('APP', ROOT . DS . 'TestApp' . DS);
 define('TMP', sys_get_temp_dir() . DS);
 define('CONFIG', ROOT . DS . 'config' . DS);
 define('CACHE', TMP . 'cache' . DS);
@@ -72,7 +72,7 @@ Cache::setConfig([
 ]);
 
 if (!getenv('DB_URL')) {
-    putenv('DB_URL=sqlite:///:memory:');
+    putenv('DB_URL=sqlite:///' . TMP . 'test.sqlite');
 }
 ConnectionManager::setConfig('test', ['url' => getenv('DB_URL')]);
 Router::reload();
@@ -82,3 +82,10 @@ Plugin::getCollection()->add(new \Authentication\Plugin());
 date_default_timezone_set('UTC');
 
 $_SERVER['PHP_SELF'] = '/';
+
+// setup migration
+$migrator = new \Migrations\TestSuite\Migrator();
+$migrator->runMany([
+    [],
+    ['plugin' => 'RememberMe'],
+]);
