@@ -20,7 +20,7 @@
   "require-dev": {
     "cakephp/cakephp": "^4.3",
     "cakephp/cakephp-codesniffer": "^4.6",
-    "cakephp/migrations": "^3.0",
+    "cakephp/migrations": "^3.3",
     "phpunit/phpunit": "^8.5 || ^9.3"
   },
   "autoload": {
