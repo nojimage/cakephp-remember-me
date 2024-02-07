@@ -321,7 +321,7 @@ class CookieAuthenticateTest extends TestCase
 
         $this->assertSame($decode['series'], $tokens->first()->series);
         $this->assertSame($decode['token'], $tokens->first()->token);
-        $this->assertTrue($tokens->first()->expires->eq(new FrozenTime('2017-10-03 12:23:34')), 'default expires is 30days after');
+        $this->assertTrue($tokens->first()->expires->equals(new FrozenTime('2017-10-03 12:23:34')), 'default expires is 30days after');
     }
 
     /**
@@ -371,7 +371,7 @@ class CookieAuthenticateTest extends TestCase
 
         $this->assertSame('series_foo_2', $tokens->last()->series);
         $this->assertSame($decode['token'], $tokens->last()->token);
-        $this->assertTrue($tokens->last()->expires->eq(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
+        $this->assertTrue($tokens->last()->expires->equals(new FrozenTime('2017-08-31 12:23:34')), 'default expires is 30days after');
     }
 
     /**

@@ -270,7 +270,7 @@ class CookieAuthenticate extends BaseAuthenticate
             return false;
         }
 
-        if (FrozenTime::now()->gt($token->expires)) {
+        if (FrozenTime::now()->greaterThan($token->expires)) {
             return false;
         }
 
@@ -449,7 +449,7 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function getUsersTable(): RepositoryInterface
     {
-        return $this->loadModel($this->getConfig('userModel'));
+        return $this->getTableLocator()->get($this->getConfig('userModel'));
     }
 
     /**
@@ -457,6 +457,6 @@ class CookieAuthenticate extends BaseAuthenticate
      */
     protected function getTokensTable(): RepositoryInterface
     {
-        return $this->loadModel($this->getConfig('tokenStorageModel'));
+        return $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
     }
 }

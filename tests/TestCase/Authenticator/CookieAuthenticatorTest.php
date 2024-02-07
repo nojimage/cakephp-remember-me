@@ -6,6 +6,7 @@ namespace RememberMe\Test\TestCase\Authenticator;
 use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierCollection;
+use Cake\Core\Configure;
 use Cake\Datasource\EntityInterface;
 use Cake\Http\Cookie\CookieInterface;
 use Cake\Http\Response;
@@ -376,7 +377,10 @@ class CookieAuthenticatorTest extends TestCase
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
         // Send http header that clear cookie.
-        $this->assertEquals('rememberMe=; expires=Thu, 01-Jan-1970 00:00:01 UTC; path=/; secure; httponly', $result['response']->getHeaderLine('Set-Cookie'));
+        $expectsCookie = version_compare(Configure::version(), '4.4.0', '<')
+            ? 'rememberMe=; expires=Thu, 01-Jan-1970 00:00:01 UTC; path=/; secure; httponly'
+            : 'rememberMe=; expires=Thu, 01-Jan-1970 00:00:01 GMT+0000; path=/; secure; httponly';
+        $this->assertEquals($expectsCookie, $result['response']->getHeaderLine('Set-Cookie'));
     }
 
     /**

@@ -156,7 +156,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
             return false;
         }
 
-        if (FrozenTime::now()->gt($token['expires'])) {
+        if (FrozenTime::now()->greaterThan($token['expires'])) {
             $this->_errors[] = 'token expired';
 
             return false;
