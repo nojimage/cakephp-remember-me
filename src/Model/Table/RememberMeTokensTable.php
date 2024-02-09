@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace RememberMe\Model\Table;
 
-use Cake\I18n\FrozenTime;
+use Cake\I18n\DateTime;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -99,7 +99,7 @@ class RememberMeTokensTable extends Table implements RememberMeTokensTableInterf
     public function dropExpired(?string $userModel = null, string|int|null $foreignId = null): int
     {
         $conditions = [
-            $this->aliasField('expires <') => FrozenTime::now(),
+            $this->aliasField('expires <') => DateTime::now(),
         ];
         if ($userModel !== null) {
             $conditions[$this->aliasField('model')] = $userModel;

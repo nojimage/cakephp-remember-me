@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace RememberMe\Test\TestCase\Identifier;
 
 use Authentication\Identifier\Resolver\OrmResolver;
-use Cake\I18n\FrozenTime;
+use Cake\I18n\DateTime;
 use Cake\ORM\Entity;
 use RememberMe\Identifier\RememberMeTokenIdentifier;
 use RememberMe\Model\Entity\RememberMeToken;
@@ -20,7 +20,7 @@ class RememberMeTokenIdentifierTest extends TestCase
      */
     public function tearDown(): void
     {
-        FrozenTime::setTestNow();
+        DateTime::setTestNow();
         parent::tearDown();
     }
 
@@ -29,7 +29,7 @@ class RememberMeTokenIdentifierTest extends TestCase
      */
     public function testIdentifyValid(): void
     {
-        FrozenTime::setTestNow('2017-10-01 11:22:33');
+        DateTime::setTestNow('2017-10-01 11:22:33');
         $resolver = $this->getMockBuilder(OrmResolver::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['find'])
@@ -65,7 +65,7 @@ class RememberMeTokenIdentifierTest extends TestCase
      */
     public function testIdentifyNotMatchSeries(): void
     {
-        FrozenTime::setTestNow('2017-10-01 11:22:33');
+        DateTime::setTestNow('2017-10-01 11:22:33');
         $resolver = $this->getMockBuilder(OrmResolver::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['find'])
@@ -94,7 +94,7 @@ class RememberMeTokenIdentifierTest extends TestCase
      */
     public function testIdentifyNotMatchToken(): void
     {
-        FrozenTime::setTestNow('2017-10-01 11:22:33');
+        DateTime::setTestNow('2017-10-01 11:22:33');
         $resolver = $this->getMockBuilder(OrmResolver::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['find'])
@@ -123,7 +123,7 @@ class RememberMeTokenIdentifierTest extends TestCase
      */
     public function testIdentifyExpired(): void
     {
-        FrozenTime::setTestNow('2017-10-01 11:22:34');
+        DateTime::setTestNow('2017-10-01 11:22:34');
         $resolver = $this->getMockBuilder(OrmResolver::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['find'])

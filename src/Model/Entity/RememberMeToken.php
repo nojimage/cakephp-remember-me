@@ -9,13 +9,13 @@ use Cake\ORM\Entity;
  * RememberMeToken Entity
  *
  * @property int $id
- * @property \Cake\I18n\FrozenTime $created
- * @property \Cake\I18n\FrozenTime $modified
+ * @property \Cake\I18n\DateTime $created
+ * @property \Cake\I18n\DateTime $modified
  * @property string $model
  * @property string $foreign_id
  * @property string $series
  * @property string $token
- * @property \Cake\I18n\FrozenTime $expires
+ * @property \Cake\I18n\DateTime $expires
  */
 class RememberMeToken extends Entity
 {

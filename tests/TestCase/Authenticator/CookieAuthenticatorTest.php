@@ -11,7 +11,7 @@ use Cake\Datasource\EntityInterface;
 use Cake\Http\Cookie\CookieInterface;
 use Cake\Http\Response;
 use Cake\Http\ServerRequestFactory;
-use Cake\I18n\FrozenTime;
+use Cake\I18n\DateTime;
 use Cake\ORM\Entity;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -39,7 +39,7 @@ class CookieAuthenticatorTest extends TestCase
      */
     public function tearDown(): void
     {
-        FrozenTime::setTestNow();
+        DateTime::setTestNow();
         parent::tearDown();
     }
 
@@ -166,7 +166,7 @@ class CookieAuthenticatorTest extends TestCase
      */
     public function testAuthenticateExpired(): void
     {
-        FrozenTime::setTestNow('2017-10-01 11:22:34');
+        DateTime::setTestNow('2017-10-01 11:22:34');
         $identifiers = new IdentifierCollection([
             'RememberMe.RememberMeToken' => [
                 'resolver' => [
@@ -199,7 +199,7 @@ class CookieAuthenticatorTest extends TestCase
      */
     public function testAuthenticateValid(): void
     {
-        FrozenTime::setTestNow('2017-10-01 11:22:33');
+        DateTime::setTestNow('2017-10-01 11:22:33');
         $identifiers = new IdentifierCollection([
             'RememberMe.RememberMeToken' => [
                 'resolver' => [

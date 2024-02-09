@@ -14,7 +14,7 @@ use Authentication\Identifier\IdentifierInterface;
 use Authentication\UrlChecker\UrlCheckerTrait;
 use Cake\Datasource\EntityInterface;
 use Cake\Http\Cookie\Cookie;
-use Cake\I18n\FrozenTime;
+use Cake\I18n\DateTime;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\Utility\Hash;
 use InvalidArgumentException;
@@ -188,7 +188,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             'foreign_id' => $identity[$userTable->getPrimaryKey()],
             'series' => static::_generateToken($identity),
             'token' => $token,
-            'expires' => new FrozenTime($this->getConfig('cookie.expire')),
+            'expires' => new DateTime($this->getConfig('cookie.expire')),
         ]);
 
         return $tokenTable->saveOrFail($entity);
@@ -247,10 +247,10 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
      * Creates a cookie instance with configured defaults.
      *
      * @param string $value Cookie value.
-     * @param \Cake\I18n\FrozenTime|null $expires the Cookie expire
+     * @param \Cake\I18n\DateTime|null $expires the Cookie expire
      * @return \Cake\Http\Cookie\Cookie
      */
-    protected function _createCookie(string $value, ?FrozenTime $expires = null): Cookie
+    protected function _createCookie(string $value, ?DateTime $expires = null): Cookie
     {
         $data = $this->getConfig('cookie');
 

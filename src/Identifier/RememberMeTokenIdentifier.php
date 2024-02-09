@@ -9,7 +9,7 @@ use Authentication\Identifier\Resolver\OrmResolver;
 use Authentication\Identifier\Resolver\ResolverAwareTrait;
 use Authentication\Identifier\Resolver\ResolverInterface;
 use Cake\Datasource\EntityInterface;
-use Cake\I18n\FrozenTime;
+use Cake\I18n\DateTime;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -158,7 +158,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
             return false;
         }
 
-        if (FrozenTime::now()->greaterThan($token['expires'])) {
+        if (DateTime::now()->greaterThan($token['expires'])) {
             $this->_errors[] = 'token expired';
 
             return false;

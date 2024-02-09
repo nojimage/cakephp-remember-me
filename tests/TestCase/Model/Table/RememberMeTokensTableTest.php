@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace RememberMe\Test\TestCase\Model\Table;
 
-use Cake\I18n\FrozenTime;
+use Cake\I18n\DateTime;
 use Cake\TestSuite\TestCase;
 use RememberMe\Model\Table\RememberMeTokensTable;
 
@@ -85,12 +85,12 @@ class RememberMeTokensTableTest extends TestCase
 
     public function testDropExpired(): void
     {
-        FrozenTime::setTestNow('2017-10-01 11:22:33');
+        DateTime::setTestNow('2017-10-01 11:22:33');
         $deleteCount = $this->RememberMeTokens->dropExpired();
         $this->assertSame(0, $deleteCount, 'not change');
         $this->assertCount(6, $this->RememberMeTokens->find()->all(), 'not change');
 
-        FrozenTime::setTestNow('2017-10-01 11:22:34');
+        DateTime::setTestNow('2017-10-01 11:22:34');
         $deleteCount = $this->RememberMeTokens->dropExpired();
         $this->assertSame(3, $deleteCount);
         $this->assertCount(3, $this->RememberMeTokens->find()->all());
@@ -98,7 +98,7 @@ class RememberMeTokensTableTest extends TestCase
 
     public function testDropExpiredWithArgs(): void
     {
-        FrozenTime::setTestNow('2017-10-01 11:22:34');
+        DateTime::setTestNow('2017-10-01 11:22:34');
         $deleteCount = $this->RememberMeTokens->dropExpired('Users');
         $this->assertSame(0, $deleteCount, 'not matching');
         $this->assertCount(6, $this->RememberMeTokens->find()->all(), 'not matching');
