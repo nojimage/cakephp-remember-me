@@ -26,7 +26,7 @@ This library inspired by Barry Jaspan's article "[Improved Persistent Login Cook
 以下のようにして、Composer経由でプラグインをCakePHPアプリケーションへ追加します:
 
 ```shell
-php composer.phar require nojimage/cakephp-remember-me:^4.0
+php composer.phar require nojimage/cakephp-remember-me:^5.0
 ```
 
 アプリケーションの `src/Application.php` ファイルへ、次の行を追加します:
@@ -58,7 +58,7 @@ bin/cake migrations migrate -p RememberMe
 // in your src/Application.php
 class Application extends ...
 {
-    public function getAuthenticationService(...)
+    public function getAuthenticationService(...): void
     {
         $service = new AuthenticationService();
         $fields = [
@@ -77,7 +77,7 @@ class Application extends ...
 }
 ```
 
-`getAuthenticationService` の説明は次のドキュメントを参考にしてください: [Quick Start - CakePHP Authentication 2.x](https://book.cakephp.org/authentication/2/en/index.html)
+`getAuthenticationService` の説明は次のドキュメントを参考にしてください: [Quick Start - CakePHP Authentication 3.x](https://book.cakephp.org/authentication/3/ja/index.html)
 
 ### RememberMe.RememberMeTokenIdentifier のオプション
 
@@ -244,103 +244,3 @@ default: `true`
         'dropExpiredToken' => false,
     ]);
 ```
-
-## [非推奨] AuthComponentでの使用方法
-
-`AppController` での AuthComponent を以下のようにして呼び出します:
-
-```(php)
-public function initialize()
-{
-    // ... snip
-
-    $this->loadComponent('Auth', [
-        'authenticate' => [
-            'RememberMe.Cookie' => [
-                'userModel' => 'Users',
-                'fields' => ['username' => 'email'],
-                'inputKey' => 'remember_me',
-            ],
-            // ... 他の認証ハンドラーの設定
-        ],
-        // ... その他のAuthコンポーネント設定
-    ]);
-    // ... snip
-}
-
-```
-
-### RememberMe.CookieAuthenticate のオプション
-
-#### `inputKey`
-
-フォーム認証でこのキーに値が入力されると、ログインCookieが発行されます。フォーム側ではこのキーでチェックボックスなどを追加してください。
-
-default: `'remember_me'`
-
-```
-    'RememberMe.Cookie' => [
-        'inputKey' => 'remember_me',
-    ],
-```
-
-
-#### `always`
-
-このオプションをtrueに設定すると、ログインCookieは認証が識別された後、常に発行されます。
-
-default: `false`
-
-```
-    'RememberMe.Cookie' => [
-        'always' => true,
-    ],
-```
-
-#### `dropExpiredToken`
-
-このオプションをtrueに設定すると、認証が識別された後に有効期限が切れたトークンを削除します。
-
-default: `true`
-
-```
-    'RememberMe.Cookie' => [
-        'dropExpiredToken' => false,
-    ],
-```
-
-
-#### `cookie`
-
-ログインCookieの書き込みオプション。
-
-- name: cookie名 (default: `'rememberMe'`)
-- expires: cookieの有効期限 (default: `'+30 days'`)
-- secure: secure フラグ (default: `true`)
-- httpOnly: http only フラグ (default: `true`)
-
-```
-    'RememberMe.Cookie' => [
-        'cookie' => [
-            'name' => 'rememberMe',
-            'expires' => '+30 days',
-            'secure' => true,
-            'httpOnly' => true,
-        ],
-    ],
-```
-
-
-#### `tokenStorageModel`
-
-ログインCookieトークンを格納するために使用されるモデル。
-
-default: `'RememberMe.RememberMeTokens'`
-
-```
-    'RememberMe.Cookie' => [
-        'tokenStorageModel' => 'YourTokensModel',
-    ],
-```
-
-その他の設定オプションについてはこちらを確認してください: https://book.cakephp.org/4.0/ja/controllers/components/authentication.html#configuring-authentication-handlers

@@ -17,14 +17,14 @@ class RememberMeTokensTableTest extends TestCase
      *
      * @var RememberMeTokensTable
      */
-    public $RememberMeTokens;
+    public RememberMeTokensTable $RememberMeTokens;
 
     /**
      * Fixtures
      *
      * @var array
      */
-    public $fixtures = [
+    public array $fixtures = [
         'plugin.RememberMe.RememberMeTokens',
     ];
 
@@ -36,7 +36,9 @@ class RememberMeTokensTableTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->RememberMeTokens = $this->getTableLocator()->get('RememberMeTokens', ['className' => RememberMeTokensTable::class]);
+
+        /** @noinspection PhpFieldAssignmentTypeMismatchInspection */
+        $this->RememberMeTokens = $this->fetchTable('RememberMeTokens', ['className' => RememberMeTokensTable::class]);
     }
 
     /**

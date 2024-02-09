@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace RememberMe\Identifier;
 
+use ArrayAccess;
 use Authentication\Identifier\AbstractIdentifier;
 use Authentication\Identifier\Resolver\OrmResolver;
 use Authentication\Identifier\Resolver\ResolverAwareTrait;
@@ -23,6 +24,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
         buildResolver as traitBuildResolver;
     }
 
+    protected const CREDENTIAL_TOKEN = 'token';
     protected const CREDENTIAL_SERIES = 'series';
 
     /**
@@ -36,7 +38,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      *
      * @var array
      */
-    protected $_defaultConfig = [
+    protected array $_defaultConfig = [
         'fields' => [
             self::CREDENTIAL_USERNAME => 'username',
         ],
@@ -63,7 +65,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     /**
      * @inheritDoc
      */
-    public function identify(array $credentials)
+    public function identify(array $credentials): ArrayAccess|array|null
     {
         if (
             !isset(
@@ -102,9 +104,9 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      * Find a user record using the username/identifier provided.
      *
      * @param string $identifier The username/identifier.
-     * @return \ArrayAccess|array|\Cake\Datasource\EntityInterface|null
+     * @return \Cake\Datasource\EntityInterface|\ArrayAccess|array|null
      */
-    protected function _findIdentity(string $identifier)
+    protected function _findIdentity(string $identifier): ArrayAccess|array|EntityInterface|null
     {
         $fields = $this->getConfig('fields.' . self::CREDENTIAL_USERNAME);
         $conditions = [];
@@ -129,8 +131,8 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
             throw new InvalidArgumentException('Can\'t get user model from identity.');
         }
 
-        $usersTable = $this->getResolver()->getTableLocator()->get($userModel);
-        $tokenStorageTable = $this->getResolver()->getTableLocator()->get($this->getConfig('tokenStorageModel'));
+        $usersTable = $this->getResolver()->fetchTable($userModel);
+        $tokenStorageTable = $this->getResolver()->fetchTable($this->getConfig('tokenStorageModel'));
 
         return $tokenStorageTable->find()
             ->where([
@@ -173,7 +175,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      */
     protected function _dropInvalidToken(EntityInterface $token): bool
     {
-        $tokenStorageTable = $this->getResolver()->getTableLocator()->get($this->getConfig('tokenStorageModel'));
+        $tokenStorageTable = $this->getResolver()->fetchTable($this->getConfig('tokenStorageModel'));
 
         return $tokenStorageTable->delete($token);
     }

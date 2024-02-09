@@ -15,13 +15,20 @@ declare(strict_types=1);
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+use Authentication\Plugin as AuthenticationPlugin;
 use Cake\Cache\Cache;
 use Cake\Core\Configure;
 use Cake\Core\Plugin;
-use Cake\Datasource\ConnectionManager;
-use Cake\Routing\Router;
-use Cake\Utility\Security;
+use Cake\TestSuite\Fixture\SchemaLoader;
+use Migrations\TestSuite\Migrator;
 
+/**
+ * Test suite bootstrap for CakePHP Plugin.
+ *
+ * This function is used to find the location of CakePHP whether CakePHP
+ * has been installed as a dependency of the plugin, or the plugin is itself
+ * installed as a dependency of an application.
+ */
 $findRoot = function ($root) {
     do {
         $lastRoot = $root;
@@ -30,62 +37,40 @@ $findRoot = function ($root) {
             return $root;
         }
     } while ($root !== $lastRoot);
+
     throw new Exception('Cannot find the root of the application, unable to run tests');
 };
 $root = $findRoot(__FILE__);
 unset($findRoot);
-chdir($root);
 
-require_once 'vendor/cakephp/cakephp/src/basics.php';
-require_once 'vendor/autoload.php';
+$here = __DIR__;
 
-define('ROOT', $root . DS . 'tests' . DS . 'test_app');
-define('APP', ROOT . DS . 'TestApp' . DS);
-define('TMP', sys_get_temp_dir() . DS);
-define('CONFIG', ROOT . DS . 'config' . DS);
-define('CACHE', TMP . 'cache' . DS);
-
-// @codingStandardsIgnoreStart
-@mkdir(CACHE);
-// @codingStandardsIgnoreEnd
-
-Configure::write('debug', true);
-Configure::write('App', [
-    'namespace' => 'TestApp',
-    'paths' => [
-        'plugins' => [ROOT . 'Plugin' . DS],
-        'templates' => [ROOT . 'templates' . DS],
-    ],
-]);
-
-Cache::setConfig([
-    '_cake_core_' => [
-        'engine' => 'File',
-        'prefix' => 'cake_core_',
-        'serialize' => true,
-    ],
-    '_cake_model_' => [
-        'engine' => 'File',
-        'prefix' => 'cake_model_',
-        'serialize' => true,
-    ],
-]);
-
+// Ensure default test connection is defined
 if (!getenv('DB_URL')) {
-    putenv('DB_URL=sqlite:///' . TMP . 'test.sqlite');
+    putenv('DB_URL=sqlite:///' . sys_get_temp_dir() . 'test.sqlite');
 }
-ConnectionManager::setConfig('test', ['url' => getenv('DB_URL')]);
-Router::reload();
-Security::setSalt('YJfIxfs2guVoUubWDYhG93b0qyJfIxfs2guwvniR2G0FgaC9mi');
 
-Plugin::getCollection()->add(new \Authentication\Plugin());
+chdir($root);
+require $root . '/vendor/cakephp/cakephp/tests/bootstrap.php';
+require CAKE . '/functions.php';
+
 date_default_timezone_set('UTC');
-
 $_SERVER['PHP_SELF'] = '/';
 
+Plugin::getCollection()->add(new AuthenticationPlugin());
+
 // setup migration
-$migrator = new \Migrations\TestSuite\Migrator();
-$migrator->runMany([
-    [],
-    ['plugin' => 'RememberMe'],
+$schemaLoader = new SchemaLoader();
+$schemaLoader->loadInternalFile($here . '/schema.php');
+
+$migrator = new Migrator();
+$migrator->run([
+    'plugin' => 'RememberMe',
+    'skip' => ['auth_users', 'users'],
 ]);
+
+Cache::clearAll();
+
+error_reporting(E_ALL);
+
+Configure::write('App.namespace', 'TestApp');

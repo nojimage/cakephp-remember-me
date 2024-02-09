@@ -9,7 +9,7 @@ use TestApp\Model\Table\AuthUsersTable;
 
 abstract class RememberMeTestCase extends TestCase
 {
-    public $fixtures = [
+    public array $fixtures = [
         'core.Users',
         'plugin.RememberMe.AuthUsers',
         'plugin.RememberMe.RememberMeTokens',
@@ -18,7 +18,7 @@ abstract class RememberMeTestCase extends TestCase
     /**
      * @var string
      */
-    private $salt;
+    private string $salt;
 
     /**
      * @inheritDoc
@@ -48,10 +48,10 @@ abstract class RememberMeTestCase extends TestCase
         $password = password_hash('12345678', PASSWORD_DEFAULT);
         $this->getTableLocator()->clear();
 
-        $Users = $this->getTableLocator()->get('Users');
+        $Users = $this->fetchTable('Users');
         $Users->updateAll(['password' => $password], []);
 
-        $AuthUsers = $this->getTableLocator()->get('AuthUsers', [
+        $AuthUsers = $this->fetchTable('AuthUsers', [
             'className' => AuthUsersTable::class,
         ]);
         $AuthUsers->updateAll(['password' => $password], []);

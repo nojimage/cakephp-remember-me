@@ -14,11 +14,11 @@ use Cake\Validation\Validator;
  * @method \RememberMe\Model\Entity\RememberMeToken get($primaryKey, $options = [])
  * @method \RememberMe\Model\Entity\RememberMeToken newEntity($data = null, array $options = [])
  * @method \RememberMe\Model\Entity\RememberMeToken[] newEntities(array $data, array $options = [])
- * @method \RememberMe\Model\Entity\RememberMeToken|false save(\RememberMe\Model\Table\EntityInterface $entity, $options = [])
- * @method \RememberMe\Model\Entity\RememberMeToken patchEntity(\RememberMe\Model\Table\EntityInterface $entity, array $data, array $options = [])
+ * @method \RememberMe\Model\Entity\RememberMeToken|false save(\RememberMe\Model\Entity\RememberMeToken $entity, $options = [])
+ * @method \RememberMe\Model\Entity\RememberMeToken patchEntity(\RememberMe\Model\Entity\RememberMeToken $entity, array $data, array $options = [])
  * @method \RememberMe\Model\Entity\RememberMeToken[] patchEntities($entities, array $data, array $options = [])
- * @method \RememberMe\Model\Table\RememberMeToken findOrCreate($search, callable $callback = null, $options = [])
- * @mixin \RememberMe\Model\Table\TimestampBehavior
+ * @method \RememberMe\Model\Entity\RememberMeToken findOrCreate($search, callable $callback = null, $options = [])
+ * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
 class RememberMeTokensTable extends Table implements RememberMeTokensTableInterface
 {
@@ -96,7 +96,7 @@ class RememberMeTokensTable extends Table implements RememberMeTokensTableInterf
      * @param string|int|null $foreignId target user id
      * @return int the dropped token count
      */
-    public function dropExpired(?string $userModel = null, $foreignId = null): int
+    public function dropExpired(?string $userModel = null, string|int|null $foreignId = null): int
     {
         $conditions = [
             $this->aliasField('expires <') => FrozenTime::now(),

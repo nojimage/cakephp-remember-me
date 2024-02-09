@@ -26,7 +26,7 @@ You can install this plugin into your CakePHP application using [composer](http:
 The recommended way to install composer packages is:
 
 ```shell
-php composer.phar require nojimage/cakephp-remember-me:^4.0
+php composer.phar require nojimage/cakephp-remember-me:^5.0
 ```
 
 Load the plugin by adding the following statement in your project's `src/Application.php`:
@@ -58,7 +58,7 @@ Example load RememberMe's Identifier and Authenticator into the `getAuthenticati
 // in your src/Application.php
 class Application extends ...
 {
-    public function getAuthenticationService(...)
+    public function getAuthenticationService(...): void
     {
         $service = new AuthenticationService();
         $fields = [
@@ -77,7 +77,7 @@ class Application extends ...
 }
 ```
 
-more document for `getAuthenticationService`, see: [Quick Start - CakePHP Authentication 2.x](https://book.cakephp.org/authentication/2/en/index.html)
+more document for `getAuthenticationService`, see: [Quick Start - CakePHP Authentication 3.x](https://book.cakephp.org/authentication/3/en/index.html)
 
 ### RememberMe.RememberMeTokenIdentifier options
 
@@ -244,103 +244,3 @@ default: `true`
         'dropExpiredToken' => false,
     ]);
 ```
-
-## [Deprecated] Usage with AuthComponent
-
-In your `AppController` setup AuthComponent:
-
-```(php)
-public function initialize()
-{
-    // ... snip
-
-    $this->loadComponent('Auth', [
-        'authenticate' => [
-            'RememberMe.Cookie' => [
-                'userModel' => 'Users',
-                'fields' => ['username' => 'email'],
-                'inputKey' => 'remember_me',
-            ],
-            // ... other authenticater config
-        ],
-        // ... other auth component config
-    ]);
-    // ... snip
-}
-
-```
-
-### RememberMe.CookieAuthenticate options
-
-#### `inputKey`
-
-When this key is input by form authentication, it issues a login cookie.
-
-default: `'remember_me'`
-
-```
-    'RememberMe.Cookie' => [
-        'inputKey' => 'remember_me',
-    ],
-```
-
-
-#### `always`
-
-When this option is set to true, a login cookie is always issued after authentication identified.
-
-default: `false`
-
-```
-    'RememberMe.Cookie' => [
-        'always' => true,
-    ],
-```
-
-#### `dropExpiredToken`
-
-When this option is set to true, drop expired tokens after authentication identified.
-
-default: `true`
-
-```
-    'RememberMe.Cookie' => [
-        'dropExpiredToken' => false,
-    ],
-```
-
-
-#### `cookie`
-
-Write option for login cookie.
-
-- name: cookie name (default: `'rememberMe'`)
-- expires: cookie expiration (default: `'+30 days'`)
-- secure: secure flag (default: `true`)
-- httpOnly: http only flag (default: `true`)
-
-```
-    'RememberMe.Cookie' => [
-        'cookie' => [
-            'name' => 'rememberMe',
-            'expires' => '+30 days',
-            'secure' => true,
-            'httpOnly' => true,
-        ],
-    ],
-```
-
-
-#### `tokenStorageModel`
-
-A model used for storing login cookie tokens.
-
-default: `'RememberMe.RememberMeTokens'`
-
-```
-    'RememberMe.Cookie' => [
-        'tokenStorageModel' => 'YourTokensModel',
-    ],
-```
-
-more configuration options see: https://book.cakephp.org/4.0/en/controllers/components/authentication.html#configuring-authentication-handlers

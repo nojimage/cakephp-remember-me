@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace RememberMe\Authenticator;
 
+use ArrayAccess;
 use Authentication\Authenticator\AbstractAuthenticator;
 use Authentication\Authenticator\PersistenceInterface;
 use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
+use Authentication\Identifier\AbstractIdentifier;
 use Authentication\Identifier\IdentifierCollection;
 use Authentication\Identifier\IdentifierInterface;
 use Authentication\UrlChecker\UrlCheckerTrait;
@@ -35,12 +37,12 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     /**
      * @inheritDoc
      */
-    protected $_defaultConfig = [
+    protected array $_defaultConfig = [
         'loginUrl' => null,
         'urlChecker' => 'Authentication.Default',
         'rememberMeField' => 'remember_me',
         'fields' => [
-            IdentifierInterface::CREDENTIAL_USERNAME => 'username',
+            AbstractIdentifier::CREDENTIAL_USERNAME => 'username',
         ],
         'cookie' => [
             'name' => 'rememberMe',
@@ -144,7 +146,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         }
         $token = $this->_saveToken($identity, static::_generateToken($identity));
         $encryptedToken = static::encryptToken(
-            $identity[$this->getConfig('fields.' . IdentifierInterface::CREDENTIAL_USERNAME)],
+            $identity[$this->getConfig('fields.' . AbstractIdentifier::CREDENTIAL_USERNAME)],
             $token['series'],
             $token['token']
         );
@@ -164,16 +166,16 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
      * @return \Cake\Datasource\EntityInterface
      * @throws \Cake\ORM\Exception\PersistenceFailedException
      */
-    protected function _saveToken($identity, string $token): EntityInterface
+    protected function _saveToken(ArrayAccess|array $identity, string $token): EntityInterface
     {
         $userModel = $this->_getUserModel($identity);
         if ($userModel === null) {
             throw new InvalidArgumentException('Can\'t detect user model');
         }
 
-        $userTable = $this->getTableLocator()->get($userModel);
+        $userTable = $this->fetchTable($userModel);
         /** @var \RememberMe\Model\Table\RememberMeTokensTableInterface $tokenTable */
-        $tokenTable = $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
+        $tokenTable = $this->fetchTable($this->getConfig('tokenStorageModel'));
 
         if ($this->getConfig('dropExpiredToken')) {
             // drop expired token
@@ -222,8 +224,8 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $identity = $request->getAttribute($this->getConfig('identityAttribute'));
         if (isset($credentials['series']) && $identity instanceof EntityInterface && !empty($identity->getSource())) {
             $userModel = $identity->getSource();
-            $userTable = $this->getTableLocator()->get($userModel);
-            $tokenTable = $this->getTableLocator()->get($this->getConfig('tokenStorageModel'));
+            $userTable = $this->fetchTable($userModel);
+            $tokenTable = $this->fetchTable($this->getConfig('tokenStorageModel'));
             $conditions = [
                 'model' => $userModel,
                 'foreign_id' => $identity[$userTable->getPrimaryKey()],
@@ -267,7 +269,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
      * @param \ArrayAccess|array $identity logged in user info
      * @return string|null
      */
-    protected function _getUserModel($identity): ?string
+    protected function _getUserModel(ArrayAccess|array $identity): ?string
     {
         if ($identity instanceof EntityInterface) {
             return $identity->getSource();

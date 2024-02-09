@@ -13,10 +13,11 @@ use Cake\Http\Response;
 use Cake\Http\ServerRequestFactory;
 use Cake\I18n\FrozenTime;
 use Cake\ORM\Entity;
-use Cake\ORM\TableRegistry;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RememberMe\Authenticator\CookieAuthenticator;
+use RememberMe\Model\Entity\RememberMeToken;
+use RememberMe\Model\Table\RememberMeTokensTable;
 use RememberMe\Test\TestCase\RememberMeTestCase as TestCase;
 
 class CookieAuthenticatorTest extends TestCase
@@ -24,12 +25,13 @@ class CookieAuthenticatorTest extends TestCase
     /**
      * @var RememberMeTokensTable
      */
-    private $Tokens;
+    private RememberMeTokensTable $Tokens;
 
     public function setUp(): void
     {
         parent::setUp();
-        $this->Tokens = TableRegistry::getTableLocator()->get('RememberMe.RememberMeTokens');
+        /** @noinspection PhpFieldAssignmentTypeMismatchInspection */
+        $this->Tokens = $this->fetchTable('RememberMe.RememberMeTokens');
     }
 
     /**
@@ -256,7 +258,7 @@ class CookieAuthenticatorTest extends TestCase
         $this->assertInstanceOf(RequestInterface::class, $result['request']);
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
-        $token = $this->Tokens->find()->orderDesc('id')->first();
+        $token = $this->Tokens->find()->orderByDesc('id')->first();
         /** @var RememberMeToken $token */
         $this->assertSame('AuthUsers', $token->model);
         $this->assertSame('1', $token->foreign_id);
@@ -312,7 +314,7 @@ class CookieAuthenticatorTest extends TestCase
         $authenticator->persistIdentity($request, $response, $identity);
         $authenticator->persistIdentity($request, $response, $identity);
 
-        $token = $this->Tokens->find()->orderDesc('id')->first();
+        $token = $this->Tokens->find()->orderByDesc('id')->first();
         /** @var RememberMeToken $token */
         $this->assertSame('AuthUsers', $token->model);
         $this->assertSame('1', $token->foreign_id);
