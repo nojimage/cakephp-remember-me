@@ -26,7 +26,7 @@ This library inspired by Barry Jaspan's article "[Improved Persistent Login Cook
 以下のようにして、Composer経由でプラグインをCakePHPアプリケーションへ追加します:
 
 ```shell
-php composer.phar require nojimage/cakephp-remember-me:^4.0.0-beta1
+php composer.phar require nojimage/cakephp-remember-me:^4.0
 ```
 
 アプリケーションの `src/Application.php` ファイルへ、次の行を追加します:

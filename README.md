@@ -26,7 +26,7 @@ You can install this plugin into your CakePHP application using [composer](http:
 The recommended way to install composer packages is:
 
 ```shell
-php composer.phar require nojimage/cakephp-remember-me:4.0.0-beta1
+php composer.phar require nojimage/cakephp-remember-me:^4.0
 ```
 
 Load the plugin by adding the following statement in your project's `src/Application.php`:
