@@ -377,7 +377,7 @@ class CookieAuthenticatorTest extends TestCase
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
         // Send http header that clear cookie.
-        $expectsCookie = version_compare(Configure::version(), '4.4.0', '<')
+        $expectsCookie = version_compare(Configure::version(), '4.4.12', '<')
             ? 'rememberMe=; expires=Thu, 01-Jan-1970 00:00:01 UTC; path=/; secure; httponly'
             : 'rememberMe=; expires=Thu, 01-Jan-1970 00:00:01 GMT+0000; path=/; secure; httponly';
         $this->assertEquals($expectsCookie, $result['response']->getHeaderLine('Set-Cookie'));
