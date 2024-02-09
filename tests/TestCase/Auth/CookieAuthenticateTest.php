@@ -315,7 +315,7 @@ class CookieAuthenticateTest extends TestCase
             'model' => 'AuthUsers',
             'foreign_id' => 1,
         ])
-            ->orderDesc('modified')
+            ->orderDesc('id')
             ->all();
         $this->assertCount(3, $tokens);
 
