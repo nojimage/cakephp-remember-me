@@ -160,7 +160,7 @@ jobs:
 #        run: composer stan-setup
 
       - name: Run PHP CodeSniffer
-        run: vendor/bin/phpcs --report=checkstyle -p --extensions=php --standard=vendor/cakephp/cakephp-codesniffer/CakePHP src/ tests/
+        run: vendor/bin/phpcs --report=checkstyle -p --extensions=php src/ tests/
 #
 #      - name: Run psalm
 #        if: success() || failure()
