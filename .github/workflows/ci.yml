@@ -106,6 +106,8 @@ jobs:
       - name: Submit code coverage
         if: matrix.coverage == 'coverage'
         uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   cs-stan:
     name: Coding Standard & Static Analysis
