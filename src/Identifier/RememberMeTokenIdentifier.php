@@ -50,7 +50,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     /**
      * @inheritDoc
      */
-    protected function buildResolver($config): OrmResolver
+    protected function buildResolver(array|string $config): OrmResolver
     {
         $instance = $this->traitBuildResolver($config);
 
@@ -118,10 +118,10 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
     }
 
     /**
-     * find user's remember me token.
+     * find some user's remember me token.
      *
      * @param \Cake\Datasource\EntityInterface $identity the identity
-     * @param string $series the credentials series
+     * @param string $series the credential series
      * @return \Cake\Datasource\EntityInterface|null
      */
     protected function _findToken(EntityInterface $identity, string $series): ?EntityInterface
@@ -133,11 +133,15 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
 
         $usersTable = $this->getResolver()->fetchTable($userModel);
         $tokenStorageTable = $this->getResolver()->fetchTable($this->getConfig('tokenStorageModel'));
+        $primaryKey = $usersTable->getPrimaryKey();
+        if (!is_string($primaryKey)) {
+            throw new InvalidArgumentException('User model must have a single primary key.');
+        }
 
         return $tokenStorageTable->find()
             ->where([
                 'model' => $userModel,
-                'foreign_id' => $identity->get($usersTable->getPrimaryKey()),
+                'foreign_id' => $identity->get($primaryKey),
                 'series' => $series,
             ])
             ->first();
