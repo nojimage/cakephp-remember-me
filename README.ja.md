@@ -17,7 +17,7 @@
 
 このプラグインは、Cookieによって永続的にログインする認証ハンドラを提供します。 暗号化されたユーザー名/パスワードをCookieに設定する代わりに、トークンを発行する方法を使用します。
 
-This library inspired by Barry Jaspan's article "[Improved Persistent Login Cookie Best Practice](http://jaspan.com/improved_persistent_login_cookie_best_practice)", and Gabriel Birke's libray "https://github.com/gbirke/rememberme".
+This library is inspired by Barry Jaspan's article "[Improved Persistent Login Cookie Best Practice](http://jaspan.com/improved_persistent_login_cookie_best_practice)", and Gabriel Birke's library "https://github.com/gbirke/rememberme".
 
 ## インストール
 
@@ -50,7 +50,7 @@ bin/cake migrations migrate -p RememberMe
 ## Authenticationプラグインでの使用方法
 
 [cakephp/authentication](https://github.com/cakephp/authentication) を使用しているのであれば、
-`RememberMeTokenIdentifier` と `CookeAuthenticator` を使用してください。
+`RememberMeTokenIdentifier` と `CookieAuthenticator` を使用してください。
 
 `Application` の `getAuthenticationService` フックで RememberMeプラグインの Identifier と Authenticator を呼び出す例です:
 
@@ -135,7 +135,7 @@ default: `'remember_me_token'`
     ]);
 ```
 
-### RememberMe.CookeAuthenticator のオプション
+### RememberMe.CookieAuthenticator のオプション
 
 #### `loginUrl`
 
@@ -223,7 +223,7 @@ default: `'RememberMe.RememberMeTokens'`
 
 #### `always`
 
-このオプションをtrueに設定すると、ログインCookieは認証が識別された後、常に発行されます。
+このオプションをtrueに設定すると、認証が成功した後、常にログインCookieが発行されます。
 
 default: `false`
 
@@ -235,7 +235,7 @@ default: `false`
 
 #### `dropExpiredToken`
 
-このオプションをtrueに設定すると、認証が識別された後に有効期限が切れたトークンを削除します。
+このオプションをtrueに設定すると、認証が成功した後に有効期限が切れたトークンを削除します。
 
 default: `true`
 
