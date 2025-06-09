@@ -148,7 +148,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $encryptedToken = static::encryptToken(
             $identity[$this->getConfig('fields.' . AbstractIdentifier::CREDENTIAL_USERNAME)],
             $token['series'],
-            $token['token']
+            $token['token'],
         );
         $cookie = $this->_createCookie($encryptedToken, $token['expires']);
 
@@ -173,8 +173,13 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             throw new InvalidArgumentException('Can\'t detect user model');
         }
 
-        $userTable = $this->fetchTable($userModel);
-        /** @var \RememberMe\Model\Table\RememberMeTokensTableInterface $tokenTable */
+        $usersTable = $this->fetchTable($userModel);
+        $primaryKey = $usersTable->getPrimaryKey();
+        if (!is_string($primaryKey)) {
+            throw new InvalidArgumentException('User model must have a single primary key.');
+        }
+
+        /** @var \RememberMe\Model\Table\RememberMeTokensTableInterface&\Cake\ORM\Table $tokenTable */
         $tokenTable = $this->fetchTable($this->getConfig('tokenStorageModel'));
 
         if ($this->getConfig('dropExpiredToken')) {
@@ -185,7 +190,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         // create token entity
         $entity = $tokenTable->newEntity([
             'model' => $userModel,
-            'foreign_id' => $identity[$userTable->getPrimaryKey()],
+            'foreign_id' => $identity[$primaryKey],
             'series' => static::_generateToken($identity),
             'token' => $token,
             'expires' => new DateTime($this->getConfig('cookie.expire')),
@@ -261,7 +266,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             $data['path'],
             $data['domain'],
             $data['secure'],
-            $data['httpOnly']
+            $data['httpOnly'],
         );
     }
 

@@ -44,8 +44,8 @@ trait EncryptCookieTrait
         return base64_encode(
             Security::encrypt(
                 json_encode(compact('username', 'series', 'token'), JSON_THROW_ON_ERROR),
-                Security::getSalt()
-            )
+                Security::getSalt(),
+            ),
         );
     }
 

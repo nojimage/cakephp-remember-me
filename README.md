@@ -15,9 +15,9 @@
     </a>
 </p>
 
-This plugin provides an authenticate handler that permanent login by cookie. This plugin use method of issuing a token, instead of set to cookie encrypted username/password.
+This plugin provides an authentication handler that enables permanent login via cookie. This plugin uses a method of issuing a token instead of setting an encrypted username / password in a cookie.
 
-This library inspired by Barry Jaspan's article "[Improved Persistent Login Cookie Best Practice](http://jaspan.com/improved_persistent_login_cookie_best_practice)", and Gabriel Birke's libray "https://github.com/gbirke/rememberme".
+This library is inspired by Barry Jaspan's article "[Improved Persistent Login Cookie Best Practice](http://jaspan.com/improved_persistent_login_cookie_best_practice)", and Gabriel Birke's library "https://github.com/gbirke/rememberme".
 
 ## Installation
 
@@ -50,9 +50,9 @@ bin/cake migrations migrate -p RememberMe
 ## Usage with Authentication plugin
 
 If you're using [cakephp/authentication](https://github.com/cakephp/authentication),
-use `RememberMeTokenIdentifier` and `CookeAuthenticator`.
+use `RememberMeTokenIdentifier` and `CookieAuthenticator`.
 
-Example load RememberMe's Identifier and Authenticator into the `getAuthenticationService` hook within `Application`:
+Example of loading RememberMe's Identifier and Authenticator into the `getAuthenticationService` hook within `Application`:
 
 ```php
 // in your src/Application.php
@@ -97,8 +97,8 @@ default: `['username' => 'username']`
 
 #### `resolver`
 
-The identity resolver. If change your Resolver,
- must extend `Authentication\Identifier\Resolver\OrmResolver`.
+The identity resolver. If you change your Resolver,
+it must extend `Authentication\Identifier\Resolver\OrmResolver`.
 
 default: `'Authentication.Orm'`
 
@@ -113,7 +113,7 @@ default: `'Authentication.Orm'`
 
 #### `tokenStorageModel`
 
-A model used for find login cookie tokens.
+A model used for finding login cookie tokens.
 
 default: `'RememberMe.RememberMeTokens'`
 
@@ -223,7 +223,7 @@ default: `'RememberMe.RememberMeTokens'`
 
 #### `always`
 
-When this option is set to true, a login cookie is always issued after authentication identified.
+When this option is set to true, a login cookie is always issued after successful authentication.
 
 default: `false`
 
@@ -235,7 +235,7 @@ default: `false`
 
 #### `dropExpiredToken`
 
-When this option is set to true, drop expired tokens after authentication identified.
+When this option is set to true, expired tokens are dropped after successful authentication.
 
 default: `true`
 

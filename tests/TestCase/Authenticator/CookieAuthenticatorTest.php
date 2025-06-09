@@ -58,7 +58,7 @@ class CookieAuthenticatorTest extends TestCase
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
-            ['REQUEST_URI' => '/testpath']
+            ['REQUEST_URI' => '/testpath'],
         );
 
         $authenticator = new CookieAuthenticator($identifiers);
@@ -88,7 +88,7 @@ class CookieAuthenticatorTest extends TestCase
             null,
             [
                 'rememberMe' => '',
-            ]
+            ],
         );
 
         $authenticator = new CookieAuthenticator($identifiers);
@@ -118,7 +118,7 @@ class CookieAuthenticatorTest extends TestCase
             null,
             [
                 'rememberMe' => 'unencrypted',
-            ]
+            ],
         );
 
         $authenticator = new CookieAuthenticator($identifiers);
@@ -150,7 +150,7 @@ class CookieAuthenticatorTest extends TestCase
             null,
             [
                 'rememberMe' => $encryptedToken,
-            ]
+            ],
         );
 
         $authenticator = new CookieAuthenticator($identifiers);
@@ -183,7 +183,7 @@ class CookieAuthenticatorTest extends TestCase
             null,
             [
                 'rememberMe' => $encryptedToken,
-            ]
+            ],
         );
 
         $authenticator = new CookieAuthenticator($identifiers);
@@ -216,7 +216,7 @@ class CookieAuthenticatorTest extends TestCase
             null,
             [
                 'rememberMe' => $encryptedToken,
-            ]
+            ],
         );
 
         $authenticator = new CookieAuthenticator($identifiers);
@@ -238,7 +238,7 @@ class CookieAuthenticatorTest extends TestCase
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
-            ['REQUEST_URI' => '/testpath']
+            ['REQUEST_URI' => '/testpath'],
         );
         $request = $request->withParsedBody([
             'remember_me' => 1,
@@ -297,7 +297,7 @@ class CookieAuthenticatorTest extends TestCase
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
-            ['REQUEST_URI' => '/testpath']
+            ['REQUEST_URI' => '/testpath'],
         );
         $request = $request->withParsedBody([
             'remember_me' => 1,
@@ -329,7 +329,7 @@ class CookieAuthenticatorTest extends TestCase
     {
         $identifiers = new IdentifierCollection(['Authentication.Password']);
         $request = ServerRequestFactory::fromGlobals(
-            ['REQUEST_URI' => '/testpath']
+            ['REQUEST_URI' => '/testpath'],
         );
         $request = $request->withParsedBody([
             'remember_me' => 1,
@@ -367,7 +367,7 @@ class CookieAuthenticatorTest extends TestCase
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
-            ['REQUEST_URI' => '/testpath']
+            ['REQUEST_URI' => '/testpath'],
         );
         $response = new Response();
 
@@ -395,7 +395,7 @@ class CookieAuthenticatorTest extends TestCase
         ]);
 
         $request = ServerRequestFactory::fromGlobals(
-            ['REQUEST_URI' => '/testpath']
+            ['REQUEST_URI' => '/testpath'],
         );
         $response = new Response();
 

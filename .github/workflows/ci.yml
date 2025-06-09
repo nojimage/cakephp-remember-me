@@ -12,12 +12,12 @@ on:
 
 jobs:
   testsuite:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        cakephp-version: ['5.0.*']
-        php-version: ['8.1', '8.2', '8.3']
+        cakephp-version: ['5.0.*', '5.1.*', '5.2.*']
+        php-version: ['8.2', '8.3', '8.4']
         db-type: ['mysql']
         prefer-lowest: ['']
         coverage: ['no']
@@ -27,14 +27,14 @@ jobs:
             db-type: 'mysql:8.0'
             prefer-lowest: 'prefer-lowest'
             coverage: 'no'
-          - cakephp-version: '5.0.*'
-            php-version: '8.3'
+          - cakephp-version: '5.2.*'
+            php-version: '8.4'
             db-type: 'mysql'
             prefer-lowest: ''
             coverage: 'no'
 
-          - php-version: '8.3'
-            cakephp-version: '5.0.*'
+          - php-version: '8.4'
+            cakephp-version: '5.2.*'
             db-type: 'mysql'
             prefer-lowest: ''
             coverage: 'coverage'
@@ -80,9 +80,7 @@ jobs:
 
       - name: Composer install
         run: |
-          if [[ ${{ matrix.php-version }} == '8.1' ]]; then
-            composer update --ignore-platform-reqs
-          elif ${{ matrix.prefer-lowest == 'prefer-lowest' }}; then
+          if ${{ matrix.prefer-lowest == 'prefer-lowest' }}; then
             composer update --prefer-lowest --prefer-stable
           else
             composer update
@@ -111,7 +109,7 @@ jobs:
 
   cs-stan:
     name: Coding Standard & Static Analysis
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -121,7 +119,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: mbstring, intl, apcu
           coverage: none
 
@@ -152,6 +150,6 @@ jobs:
 #        if: success() || failure()
 #        run: vendor/bin/psalm.phar --output-format=github
 #
-#      - name: Run phpstan
-#        if: success() || failure()
-#        run: vendor/bin/phpstan.phar analyse --error-format=github
+      - name: Run phpstan
+        if: success() || failure()
+        run: vendor/bin/phpstan.phar analyse --error-format=github
