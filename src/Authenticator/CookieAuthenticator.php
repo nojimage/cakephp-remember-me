@@ -148,7 +148,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $encryptedToken = static::encryptToken(
             $identity[$this->getConfig('fields.' . AbstractIdentifier::CREDENTIAL_USERNAME)],
             $token['series'],
-            $token['token']
+            $token['token'],
         );
         $cookie = $this->_createCookie($encryptedToken, $token['expires']);
 
@@ -261,7 +261,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             $data['path'],
             $data['domain'],
             $data['secure'],
-            $data['httpOnly']
+            $data['httpOnly'],
         );
     }
 

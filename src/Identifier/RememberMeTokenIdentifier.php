@@ -71,7 +71,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
             !isset(
                 $credentials[self::CREDENTIAL_USERNAME],
                 $credentials[self::CREDENTIAL_SERIES],
-                $credentials[self::CREDENTIAL_TOKEN]
+                $credentials[self::CREDENTIAL_TOKEN],
             )
         ) {
             return null;
