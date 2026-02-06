@@ -1,11 +1,10 @@
 parameters:
     level: 8
-    checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false
     paths:
         - src/
     excludePaths:
         - test_app/
     ignoreErrors:
-        -
-            identifier: missingType.generics
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics
