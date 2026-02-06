@@ -16,25 +16,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cakephp-version: ['5.0.*', '5.1.*', '5.2.*']
-        php-version: ['8.2', '8.3', '8.4']
+        cakephp-version: ['5.0.*', '5.1.*', '5.2.*', '5.3.*']
+        php-version: ['8.2', '8.3', '8.4', '8.5']
         db-type: ['mysql']
         prefer-lowest: ['']
         coverage: ['no']
         include:
+          # 最小バージョンテスト（prefer-lowest）
           - cakephp-version: '5.0.*'
             php-version: '8.1'
             db-type: 'mysql:8.0'
             prefer-lowest: 'prefer-lowest'
             coverage: 'no'
-          - cakephp-version: '5.2.*'
-            php-version: '8.4'
-            db-type: 'mysql'
-            prefer-lowest: ''
-            coverage: 'no'
-
-          - php-version: '8.4'
-            cakephp-version: '5.2.*'
+          # 最新バージョンテスト（カバレッジ付き）
+          - cakephp-version: '5.3.*'
+            php-version: '8.5'
             db-type: 'mysql'
             prefer-lowest: ''
             coverage: 'coverage'
@@ -56,7 +52,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: mbstring, intl, apcu, sqlite, pdo_${{ matrix.db-type }}
+          extensions: mbstring, intl, apcu, sqlite, pdo_mysql
           ini-values: apc.enable_cli = 1
           coverage: xdebug
 
@@ -119,7 +115,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: mbstring, intl, apcu
           coverage: none
 
