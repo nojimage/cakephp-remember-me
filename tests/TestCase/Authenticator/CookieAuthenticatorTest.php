@@ -13,6 +13,7 @@ use Cake\Http\Response;
 use Cake\Http\ServerRequestFactory;
 use Cake\I18n\DateTime;
 use Cake\ORM\Entity;
+use InvalidArgumentException;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RememberMe\Authenticator\CookieAuthenticator;
@@ -421,5 +422,37 @@ class CookieAuthenticatorTest extends TestCase
 
         // Will deleted login token
         $this->assertFalse($this->Tokens->exists(['model' => 'AuthUsers', 'foreign_id' => 1, 'series' => 'series_foo_1']));
+    }
+
+    /**
+     * @return void
+     */
+    public function testClearIdentityWithCompositePrimaryKey(): void
+    {
+        $identifiers = new IdentifierCollection([
+            'RememberMe.RememberMeToken',
+        ]);
+
+        $this->fetchTable('AuthUsers')->setPrimaryKey(['id', 'username']);
+
+        $identity = new Entity([
+            'id' => 1,
+            'username' => 'foo',
+        ]);
+        $identity->setSource('AuthUsers');
+        $request = ServerRequestFactory::fromGlobals(
+            ['REQUEST_URI' => '/testpath'],
+        )
+            ->withCookieParams([
+                'rememberMe' => CookieAuthenticator::encryptToken('foo', 'series_foo_1', 'logintoken1'),
+            ])
+            ->withAttribute('identity', $identity);
+
+        $authenticator = new CookieAuthenticator($identifiers);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('User model must have a single primary key.');
+
+        $authenticator->clearIdentity($request, new Response());
     }
 }

@@ -206,9 +206,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     {
         $identifier = $this->getIdentifier();
         if ($identifier instanceof IdentifierCollection) {
-            $identifier = method_exists($identifier, 'getIdentificationProvider')
-                ? $identifier->getIdentificationProvider()
-                : null;
+            $identifier = $identifier->getIdentificationProvider();
         }
 
         return $identifier;
@@ -229,11 +227,14 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $identity = $request->getAttribute($this->getConfig('identityAttribute'));
         if (isset($credentials['series']) && $identity instanceof EntityInterface && !empty($identity->getSource())) {
             $userModel = $identity->getSource();
-            $userTable = $this->fetchTable($userModel);
+            $primaryKey = $this->fetchTable($userModel)->getPrimaryKey();
+            if (!is_string($primaryKey)) {
+                throw new InvalidArgumentException('User model must have a single primary key.');
+            }
             $tokenTable = $this->fetchTable($this->getConfig('tokenStorageModel'));
             $conditions = [
                 'model' => $userModel,
-                'foreign_id' => $identity[$userTable->getPrimaryKey()],
+                'foreign_id' => $identity[$primaryKey],
                 'series' => $credentials['series'],
             ];
             $tokenTable->deleteAll($conditions);

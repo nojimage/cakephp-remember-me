@@ -3,8 +3,6 @@ parameters:
     treatPhpDocTypesAsCertain: false
     paths:
         - src/
-    excludePaths:
-        - test_app/
     ignoreErrors:
         - identifier: missingType.iterableValue
         - identifier: missingType.generics
