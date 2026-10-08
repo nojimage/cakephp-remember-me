@@ -9,6 +9,7 @@ use Authentication\Authenticator\PersistenceInterface;
 use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierInterface;
+use Authentication\IdentityInterface;
 use Authentication\UrlChecker\UrlCheckerTrait;
 use Cake\Datasource\EntityInterface;
 use Cake\Http\Cookie\Cookie;
@@ -229,6 +230,10 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             // nothing to do
         }
         $identity = $request->getAttribute($this->getConfig('identityAttribute'));
+        // AuthenticationMiddleware stores an IdentityInterface that wraps the user entity.
+        if ($identity instanceof IdentityInterface) {
+            $identity = $identity->getOriginalData();
+        }
         if (isset($credentials['series']) && $identity instanceof EntityInterface && !empty($identity->getSource())) {
             $userModel = $identity->getSource();
             $primaryKey = $this->fetchTable($userModel)->getPrimaryKey();
