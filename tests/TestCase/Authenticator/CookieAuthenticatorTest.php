@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace RememberMe\Test\TestCase\Authenticator;
 
+use Authentication\AuthenticationService;
 use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierCollection;
+use Authentication\Identity;
 use Cake\Core\Configure;
 use Cake\Datasource\EntityInterface;
 use Cake\Http\Cookie\CookieInterface;
@@ -420,6 +422,67 @@ class CookieAuthenticatorTest extends TestCase
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
         // Will deleted login token
+        $this->assertFalse($this->Tokens->exists(['model' => 'AuthUsers', 'foreign_id' => 1, 'series' => 'series_foo_1']));
+    }
+
+    /**
+     * @return void
+     */
+    public function testClearIdentityWithIdentityObject(): void
+    {
+        $identifiers = new IdentifierCollection([
+            'RememberMe.RememberMeToken',
+        ]);
+        $entity = new Entity([
+            'id' => 1,
+            'username' => 'foo',
+        ]);
+        $entity->setSource('AuthUsers');
+        $request = ServerRequestFactory::fromGlobals(
+            ['REQUEST_URI' => '/testpath'],
+        )
+            ->withCookieParams([
+                'rememberMe' => CookieAuthenticator::encryptToken('foo', 'series_foo_1', 'logintoken1'),
+            ])
+            ->withAttribute('identity', new Identity($entity));
+        $authenticator = new CookieAuthenticator($identifiers);
+
+        $authenticator->clearIdentity($request, new Response());
+
+        $this->assertFalse($this->Tokens->exists(['model' => 'AuthUsers', 'foreign_id' => 1, 'series' => 'series_foo_1']));
+    }
+
+    /**
+     * @return void
+     */
+    public function testClearIdentityThroughAuthenticationService(): void
+    {
+        $service = new AuthenticationService();
+        // loadIdentifier() is deprecated since 3.3.0. Whether the warning is emitted depends on
+        // error_reporting under the test runner, so mute it instead of asserting it.
+        $errorLevel = error_reporting(E_ALL & ~E_USER_DEPRECATED);
+        try {
+            $service->loadIdentifier('RememberMe.RememberMeToken', [
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'AuthUsers',
+                ],
+            ]);
+            $service->loadAuthenticator('RememberMe.Cookie');
+        } finally {
+            error_reporting($errorLevel);
+        }
+        // AuthenticationMiddleware stores the identity built by the service, not the entity itself.
+        $request = ServerRequestFactory::fromGlobals(
+            ['REQUEST_URI' => '/testpath'],
+        )
+            ->withCookieParams([
+                'rememberMe' => CookieAuthenticator::encryptToken('foo', 'series_foo_1', 'logintoken1'),
+            ])
+            ->withAttribute('identity', $service->buildIdentity($this->fetchTable('AuthUsers')->get(1)));
+
+        $service->clearIdentity($request, new Response());
+
         $this->assertFalse($this->Tokens->exists(['model' => 'AuthUsers', 'foreign_id' => 1, 'series' => 'series_foo_1']));
     }
 }
