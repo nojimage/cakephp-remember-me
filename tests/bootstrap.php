@@ -15,7 +15,7 @@ declare(strict_types=1);
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-use Authentication\Plugin as AuthenticationPlugin;
+use Authentication\AuthenticationPlugin;
 use Cake\Cache\Cache;
 use Cake\Core\Configure;
 use Cake\Core\Plugin;

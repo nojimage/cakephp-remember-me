@@ -13,6 +13,9 @@ on:
 jobs:
   testsuite:
     runs-on: ubuntu-24.04
+    env:
+      # Old CakePHP versions in the matrix have security advisories; Composer blocks them by default.
+      COMPOSER_NO_SECURITY_BLOCKING: '1'
     strategy:
       fail-fast: false
       matrix:
@@ -21,7 +24,15 @@ jobs:
         db-type: ['mysql']
         prefer-lowest: ['']
         coverage: ['no']
+        authentication-version: ['']
         include:
+          # cakephp/authentication 3.x
+          - cakephp-version: '5.4.*'
+            php-version: '8.5'
+            db-type: 'mysql'
+            prefer-lowest: ''
+            coverage: 'no'
+            authentication-version: '^3.3.4'
           # 最小バージョンテスト（prefer-lowest）
           - cakephp-version: '5.0.*'
             php-version: '8.1'
@@ -68,11 +79,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ steps.key-date.outputs.date }}-${{ hashFiles('composer.json') }}-${{ matrix.prefer-lowest }}
+          key: ${{ runner.os }}-composer-${{ steps.key-date.outputs.date }}-${{ hashFiles('composer.json') }}-${{ matrix.prefer-lowest }}-${{ matrix.authentication-version }}
 
       - name: Change CakePHP version
         run: |
           composer require cakephp/cakephp:${{ matrix.cakephp-version }}
+
+      - name: Change authentication version
+        if: matrix.authentication-version != ''
+        run: |
+          composer require --no-update "cakephp/authentication:${{ matrix.authentication-version }}"
 
       - name: Composer install
         run: |
@@ -104,8 +120,12 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   cs-stan:
-    name: Coding Standard & Static Analysis
+    name: Coding Standard & Static Analysis (authentication ${{ matrix.authentication-version || 'latest' }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        authentication-version: ['', '^3.3.4']
 
     steps:
       - uses: actions/checkout@v4
@@ -131,7 +151,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ steps.key-date.outputs.date }}-${{ hashFiles('composer.json') }}-${{ matrix.prefer-lowest }}
+          key: ${{ runner.os }}-composer-${{ steps.key-date.outputs.date }}-${{ hashFiles('composer.json') }}-${{ matrix.authentication-version }}
+
+      - name: Change authentication version
+        if: matrix.authentication-version != ''
+        run: composer require --no-update "cakephp/authentication:${{ matrix.authentication-version }}"
 
       - name: Composer install
         run: composer install

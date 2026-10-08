@@ -51,6 +51,7 @@ bin/cake migrations migrate -p RememberMe
 
 If you're using [cakephp/authentication](https://github.com/cakephp/authentication),
 use `RememberMeTokenIdentifier` and `CookieAuthenticator`.
+Both cakephp/authentication 3.x (3.3.4 or later) and 4.x are supported.
 
 Example of loading RememberMe's Identifier and Authenticator into the `getAuthenticationService` hook within `Application`:
 
@@ -65,11 +66,14 @@ class Application extends ...
             'username' => 'email',
             'password' => 'password'
         ];
-        // ... setup other identifier and authenticator
+        // ... setup other authenticators
 
         // setup RememberMe
-        $service->loadIdentifier('RememberMe.RememberMeToken', compact('fields'));
         $service->loadAuthenticator('RememberMe.Cookie', [
+            'identifier' => [
+                'className' => 'RememberMe.RememberMeToken',
+                'fields' => $fields,
+            ],
             'fields' => $fields,
             'loginUrl' => '/users/login',
         ]);
@@ -77,9 +81,31 @@ class Application extends ...
 }
 ```
 
-more document for `getAuthenticationService`, see: [Quick Start - CakePHP Authentication 3.x](https://book.cakephp.org/authentication/3/en/index.html)
+With cakephp/authentication 3.x, an `identifier` array is keyed by the identifier name:
+
+```php
+        $service->loadAuthenticator('RememberMe.Cookie', [
+            'identifier' => [
+                'RememberMe.RememberMeToken' => ['fields' => $fields],
+            ],
+            'fields' => $fields,
+            'loginUrl' => '/users/login',
+        ]);
+```
+
+`'identifier' => 'RememberMe.RememberMeToken'` (without options) works on both versions.
+`$service->loadIdentifier()` still works on 3.x, but it is deprecated since 3.3.0 and removed in 4.x.
+
+With 4.x, if `identifier` is omitted, a `RememberMeTokenIdentifier` is created
+with the authenticator's `fields` and `tokenStorageModel`. Its resolver uses the `Users` model,
+so set `identifier` when your user model is different.
+
+more document for `getAuthenticationService`, see: [Quick Start - CakePHP Authentication 4.x](https://book.cakephp.org/authentication/4/)
 
 ### RememberMe.RememberMeTokenIdentifier options
+
+The examples below use the 4.x format.
+With 3.x, put the options in `'identifier' => ['RememberMe.RememberMeToken' => [...]]`.
 
 #### `fields`
 
@@ -88,9 +114,12 @@ The fields for the lookup.
 default: `['username' => 'username']`
 
 ```
-    $service->loadIdentifier('RememberMe.RememberMeToken', [
-        'fields' => [
-            'username' => 'email',
+    $service->loadAuthenticator('RememberMe.Cookie', [
+        'identifier' => [
+            'className' => 'RememberMe.RememberMeToken',
+            'fields' => [
+                'username' => 'email',
+            ],
         ],
     ]);
 ```
@@ -103,10 +132,13 @@ it must extend `Authentication\Identifier\Resolver\OrmResolver`.
 default: `'Authentication.Orm'`
 
 ```
-    $service->loadIdentifier('RememberMe.RememberMeToken', [
-        'resolver' => [
-            'className' => 'Authentication.Orm',
-            'userModel' => 'Administrators',
+    $service->loadAuthenticator('RememberMe.Cookie', [
+        'identifier' => [
+            'className' => 'RememberMe.RememberMeToken',
+            'resolver' => [
+                'className' => 'Authentication.Orm',
+                'userModel' => 'Administrators',
+            ],
         ],
     ]);
 ```
@@ -118,8 +150,11 @@ A model used for finding login cookie tokens.
 default: `'RememberMe.RememberMeTokens'`
 
 ```
-    $service->loadIdentifier('RememberMe.RememberMeToken', [
-        'tokenStorageModel' => 'YourTokensModel',
+    $service->loadAuthenticator('RememberMe.Cookie', [
+        'identifier' => [
+            'className' => 'RememberMe.RememberMeToken',
+            'tokenStorageModel' => 'YourTokensModel',
+        ],
     ]);
 ```
 
@@ -130,16 +165,25 @@ A property name when adding token data to identity.
 default: `'remember_me_token'`
 
 ```
-    $service->loadIdentifier('RememberMe.RememberMeToken', [
-        'userTokenFieldName' => 'cookie_token',
+    $service->loadAuthenticator('RememberMe.Cookie', [
+        'identifier' => [
+            'className' => 'RememberMe.RememberMeToken',
+            'userTokenFieldName' => 'cookie_token',
+        ],
     ]);
 ```
 
 ### RememberMe.CookeAuthenticator options
 
+#### `identifier`
+
+The identifier used to verify login cookie tokens. See above.
+
+default: `null` (a `RememberMeTokenIdentifier` is created)
+
 #### `loginUrl`
 
-The login URL, string or array of URLs. Default is null and all pages will be checked.
+The login URL. Default is null and all pages will be checked.
 
 default: `null`
 
@@ -153,11 +197,21 @@ default: `null`
 
 The URL checker class or object.
 
-default: `'DefaultUrlChecker'`
+default: `'Authentication.Default'`
+
+The behavior of `Authentication.Default` depends on the cakephp/authentication version:
+
+- 3.x: compares the URL as a string. It accepts an array of URLs and the `useRegex` option.
+- 4.x: compares the URL through `Router::url()`, so a route array is also accepted.
+  Use `'Authentication.Multi'` for multiple URLs, and `'Authentication.String'` for regular expressions.
 
 ```
     $service->loadAuthenticator('RememberMe.Cookie', [
-        'loginUrl' => '/users/login',
+        'urlChecker' => 'Authentication.Multi',
+        'loginUrl' => [
+            '/en/users/login',
+            '/ja/users/login',
+        ],
     ]);
 ```
 

@@ -15,7 +15,7 @@
     "ext-json": "*",
     "cakephp/core": "^5.0",
     "cakephp/orm": "^5.0",
-    "cakephp/authentication": "^3.0"
+    "cakephp/authentication": "^3.3.4 || ^4.0"
   },
   "require-dev": {
     "cakephp/cakephp": "^5.0",
