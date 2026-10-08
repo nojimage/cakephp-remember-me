@@ -7,6 +7,7 @@ use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierCollection;
 use Authentication\Identifier\PasswordIdentifier;
+use Authentication\Identity;
 use Cake\Core\Configure;
 use Cake\Datasource\EntityInterface;
 use Cake\Http\Cookie\CookieInterface;
@@ -536,6 +537,30 @@ class CookieAuthenticatorTest extends TestCase
         $this->assertInstanceOf(ResponseInterface::class, $result['response']);
 
         // Will deleted login token
+        $this->assertFalse($this->Tokens->exists(['model' => 'AuthUsers', 'foreign_id' => 1, 'series' => 'series_foo_1']));
+    }
+
+    /**
+     * @return void
+     */
+    public function testClearIdentityWithIdentityObject(): void
+    {
+        $entity = new Entity([
+            'id' => 1,
+            'username' => 'foo',
+        ]);
+        $entity->setSource('AuthUsers');
+        $request = ServerRequestFactory::fromGlobals(
+            ['REQUEST_URI' => '/testpath'],
+        )
+            ->withCookieParams([
+                'rememberMe' => CookieAuthenticator::encryptToken('foo', 'series_foo_1', 'logintoken1'),
+            ])
+            ->withAttribute('identity', new Identity($entity));
+        $authenticator = new CookieAuthenticator(new RememberMeTokenIdentifier());
+
+        $authenticator->clearIdentity($request, new Response());
+
         $this->assertFalse($this->Tokens->exists(['model' => 'AuthUsers', 'foreign_id' => 1, 'series' => 'series_foo_1']));
     }
 

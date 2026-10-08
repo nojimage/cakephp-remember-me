@@ -197,9 +197,10 @@ class AuthenticationServiceIntegrationTest extends TestCase
     {
         $this->skipUnlessSupported($major);
         $token = $this->saveToken($userModel);
-        $request = $this->requestWithCookie($username, $token)
-            ->withAttribute('identity', $this->fetchTable($userModel)->get(1));
         $service = $builder();
+        // AuthenticationMiddleware stores the identity built by the service, not the entity itself.
+        $request = $this->requestWithCookie($username, $token)
+            ->withAttribute('identity', $service->buildIdentity($this->fetchTable($userModel)->get(1)));
 
         $service->clearIdentity($request, new Response());
 
