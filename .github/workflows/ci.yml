@@ -13,6 +13,9 @@ on:
 jobs:
   testsuite:
     runs-on: ubuntu-24.04
+    env:
+      # Old CakePHP versions in the matrix have security advisories; Composer blocks them by default.
+      COMPOSER_NO_SECURITY_BLOCKING: '1'
     strategy:
       fail-fast: false
       matrix:
