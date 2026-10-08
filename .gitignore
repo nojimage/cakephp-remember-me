@@ -1,2 +1,5 @@
 config/Migrations/*.lock
-
+composer.lock
+.phpunit.result.cache
+.phpunit.cache/
+vendor/
