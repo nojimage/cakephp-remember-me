@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cakephp-version: ['5.0.*', '5.1.*', '5.2.*', '5.3.*']
+        cakephp-version: ['5.0.*', '5.1.*', '5.2.*', '5.3.*', '5.4.*']
         php-version: ['8.2', '8.3', '8.4', '8.5']
         db-type: ['mysql']
         prefer-lowest: ['']
@@ -29,7 +29,7 @@ jobs:
             prefer-lowest: 'prefer-lowest'
             coverage: 'no'
           # 最新バージョンテスト（カバレッジ付き）
-          - cakephp-version: '5.3.*'
+          - cakephp-version: '5.4.*'
             php-version: '8.5'
             db-type: 'mysql'
             prefer-lowest: ''
