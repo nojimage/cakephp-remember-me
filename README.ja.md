@@ -51,6 +51,7 @@ bin/cake migrations migrate -p RememberMe
 
 [cakephp/authentication](https://github.com/cakephp/authentication) を使用しているのであれば、
 `RememberMeTokenIdentifier` と `CookieAuthenticator` を使用してください。
+cakephp/authentication 3.x（3.3.4 以降）と 4.x の両方に対応しています。
 
 `Application` の `getAuthenticationService` フックで RememberMeプラグインの Identifier と Authenticator を呼び出す例です:
 
@@ -65,11 +66,14 @@ class Application extends ...
             'username' => 'email',
             'password' => 'password'
         ];
-        // ... 他の identifier や authenticator をセットアップ
+        // ... 他の authenticator をセットアップ
 
         // setup RememberMe
-        $service->loadIdentifier('RememberMe.RememberMeToken', compact('fields'));
         $service->loadAuthenticator('RememberMe.Cookie', [
+            'identifier' => [
+                'className' => 'RememberMe.RememberMeToken',
+                'fields' => $fields,
+            ],
             'fields' => $fields,
             'loginUrl' => '/users/login',
         ]);
@@ -77,9 +81,31 @@ class Application extends ...
 }
 ```
 
-`getAuthenticationService` の説明は次のドキュメントを参考にしてください: [Quick Start - CakePHP Authentication 3.x](https://book.cakephp.org/authentication/3/ja/index.html)
+cakephp/authentication 3.x では、`identifier` を配列で指定するときに Identifier 名をキーにします:
+
+```php
+        $service->loadAuthenticator('RememberMe.Cookie', [
+            'identifier' => [
+                'RememberMe.RememberMeToken' => ['fields' => $fields],
+            ],
+            'fields' => $fields,
+            'loginUrl' => '/users/login',
+        ]);
+```
+
+オプションを指定しない `'identifier' => 'RememberMe.RememberMeToken'` は、どちらの版でも使えます。
+3.x では `$service->loadIdentifier()` も引き続き使えますが、3.3.0 から非推奨で、4.x では削除されています。
+
+4.x で `identifier` を省略すると、Authenticator の `fields` と `tokenStorageModel` を引き継いだ
+`RememberMeTokenIdentifier` が作られます。このリゾルバーは `Users` モデルを使うため、
+ユーザーモデルが異なる場合は `identifier` を指定してください。
+
+`getAuthenticationService` の説明は次のドキュメントを参考にしてください: [Quick Start - CakePHP Authentication 4.x](https://book.cakephp.org/authentication/4/)
 
 ### RememberMe.RememberMeTokenIdentifier のオプション
+
+以下の例は 4.x の書き方です。
+3.x では `'identifier' => ['RememberMe.RememberMeToken' => [...]]` の中にオプションを書いてください。
 
 #### `fields`
 
@@ -88,9 +114,12 @@ class Application extends ...
 default: `['username' => 'username']`
 
 ```
-    $service->loadIdentifier('RememberMe.RememberMeToken', [
-        'fields' => [
-            'username' => 'email',
+    $service->loadAuthenticator('RememberMe.Cookie', [
+        'identifier' => [
+            'className' => 'RememberMe.RememberMeToken',
+            'fields' => [
+                'username' => 'email',
+            ],
         ],
     ]);
 ```
@@ -103,10 +132,13 @@ default: `['username' => 'username']`
 default: `'Authentication.Orm'`
 
 ```
-    $service->loadIdentifier('RememberMe.RememberMeToken', [
-        'resolver' => [
-            'className' => 'Authentication.Orm',
-            'userModel' => 'Administrators',
+    $service->loadAuthenticator('RememberMe.Cookie', [
+        'identifier' => [
+            'className' => 'RememberMe.RememberMeToken',
+            'resolver' => [
+                'className' => 'Authentication.Orm',
+                'userModel' => 'Administrators',
+            ],
         ],
     ]);
 ```
@@ -118,8 +150,11 @@ default: `'Authentication.Orm'`
 default: `'RememberMe.RememberMeTokens'`
 
 ```
-    $service->loadIdentifier('RememberMe.RememberMeToken', [
-        'tokenStorageModel' => 'YourTokensModel',
+    $service->loadAuthenticator('RememberMe.Cookie', [
+        'identifier' => [
+            'className' => 'RememberMe.RememberMeToken',
+            'tokenStorageModel' => 'YourTokensModel',
+        ],
     ]);
 ```
 
@@ -130,16 +165,25 @@ default: `'RememberMe.RememberMeTokens'`
 default: `'remember_me_token'`
 
 ```
-    $service->loadIdentifier('RememberMe.RememberMeToken', [
-        'userTokenFieldName' => 'cookie_token',
+    $service->loadAuthenticator('RememberMe.Cookie', [
+        'identifier' => [
+            'className' => 'RememberMe.RememberMeToken',
+            'userTokenFieldName' => 'cookie_token',
+        ],
     ]);
 ```
 
 ### RememberMe.CookieAuthenticator のオプション
 
+#### `identifier`
+
+ログインCookieのトークンを検証する Identifier です。上記を参照してください。
+
+default: `null`（`RememberMeTokenIdentifier` が作られます）
+
 #### `loginUrl`
 
-ログインURLは、文字列または配列のURLです。 デフォルトでは、nullがセットされ全てのページでチェックされます。
+ログインURLです。 デフォルトでは、nullがセットされ全てのページでチェックされます。
 
 default: `null`
 
@@ -153,11 +197,21 @@ default: `null`
 
 URLチェッカーのクラス名、またはオブジェクトを指定します。
 
-default: `'DefaultUrlChecker'`
+default: `'Authentication.Default'`
+
+`Authentication.Default` の動作は cakephp/authentication の版によって異なります:
+
+- 3.x: URLを文字列として比較します。URLの配列と `useRegex` オプションを使えます。
+- 4.x: `Router::url()` を通してURLを比較するため、ルート配列も使えます。
+  複数のURLには `'Authentication.Multi'` を、正規表現には `'Authentication.String'` を指定してください。
 
 ```
     $service->loadAuthenticator('RememberMe.Cookie', [
-        'loginUrl' => '/users/login',
+        'urlChecker' => 'Authentication.Multi',
+        'loginUrl' => [
+            '/en/users/login',
+            '/ja/users/login',
+        ],
     ]);
 ```
 

@@ -24,6 +24,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
         buildResolver as traitBuildResolver;
     }
 
+    public const CREDENTIAL_USERNAME = 'username';
     protected const CREDENTIAL_TOKEN = 'token';
     protected const CREDENTIAL_SERIES = 'series';
 
@@ -36,7 +37,7 @@ class RememberMeTokenIdentifier extends AbstractIdentifier
      * - `tokenStorageModel`: A model used for storing login cookie tokens.
      * - `userTokenFieldName`: A property name when adding token data to identity.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected array $_defaultConfig = [
         'fields' => [

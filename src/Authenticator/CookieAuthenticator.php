@@ -8,8 +8,6 @@ use Authentication\Authenticator\AbstractAuthenticator;
 use Authentication\Authenticator\PersistenceInterface;
 use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
-use Authentication\Identifier\AbstractIdentifier;
-use Authentication\Identifier\IdentifierCollection;
 use Authentication\Identifier\IdentifierInterface;
 use Authentication\UrlChecker\UrlCheckerTrait;
 use Cake\Datasource\EntityInterface;
@@ -20,13 +18,12 @@ use Cake\Utility\Hash;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use RememberMe\Identifier\RememberMeTokenIdentifier;
 
 /**
  * Class CookieAuthenticator
  *
  * This authenticator use method of issuing a token, instead of set to cookie encrypted username/password.
- *
- * @mmethod RememberMeTokenIdentifier|IdentifierCollection getIdentifier()
  */
 class CookieAuthenticator extends AbstractAuthenticator implements PersistenceInterface
 {
@@ -42,7 +39,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         'urlChecker' => 'Authentication.Default',
         'rememberMeField' => 'remember_me',
         'fields' => [
-            AbstractIdentifier::CREDENTIAL_USERNAME => 'username',
+            RememberMeTokenIdentifier::CREDENTIAL_USERNAME => 'username',
         ],
         'cookie' => [
             'name' => 'rememberMe',
@@ -61,15 +58,20 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     /**
      * the constructor.
      *
-     * @param \Authentication\Identifier\IdentifierInterface $identifier Identifier or identifiers collection.
+     * @param \Authentication\Identifier\IdentifierInterface|null $identifier Identifier or identifiers collection.
+     *   When null, a RememberMeTokenIdentifier is created with `fields` and `tokenStorageModel` from $config.
      * @param array $config Configuration settings.
      */
-    public function __construct(IdentifierInterface $identifier, array $config = [])
+    public function __construct(?IdentifierInterface $identifier = null, array $config = [])
     {
         if (Hash::check($config, 'cookie.expires')) {
             $config['cookie']['expire'] = $config['cookie']['expires'];
             unset($config['cookie']['expires']);
         }
+        // authentication 3.x rejects a null identifier in the parent constructor, so build the default here.
+        $identifier ??= new RememberMeTokenIdentifier(
+            array_intersect_key($config, array_flip(['fields', 'tokenStorageModel'])),
+        );
         parent::__construct($identifier, $config);
     }
 
@@ -101,10 +103,11 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
             ]);
         }
 
-        $identity = $this->_identifier->identify($credentials);
+        $identifier = $this->getIdentifier();
+        $identity = $identifier->identify($credentials);
 
         if (empty($identity)) {
-            return new Result(null, ResultInterface::FAILURE_IDENTITY_NOT_FOUND, $this->_identifier->getErrors());
+            return new Result(null, ResultInterface::FAILURE_IDENTITY_NOT_FOUND, $identifier->getErrors());
         }
 
         return new Result($identity, ResultInterface::SUCCESS);
@@ -146,7 +149,7 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         }
         $token = $this->_saveToken($identity, static::_generateToken($identity));
         $encryptedToken = static::encryptToken(
-            $identity[$this->getConfig('fields.' . AbstractIdentifier::CREDENTIAL_USERNAME)],
+            $identity[$this->getConfig('fields.' . RememberMeTokenIdentifier::CREDENTIAL_USERNAME)],
             $token['series'],
             $token['token'],
         );
@@ -205,13 +208,12 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
     protected function _getSuccessfulIdentifier(): ?IdentifierInterface
     {
         $identifier = $this->getIdentifier();
-        if ($identifier instanceof IdentifierCollection) {
-            $identifier = method_exists($identifier, 'getIdentificationProvider')
-                ? $identifier->getIdentificationProvider()
-                : null;
+        // IdentifierCollection (authentication 3.x only): use the identifier that succeeded.
+        if (method_exists($identifier, 'getIdentificationProvider')) {
+            $identifier = $identifier->getIdentificationProvider();
         }
 
-        return $identifier;
+        return $identifier instanceof IdentifierInterface ? $identifier : null;
     }
 
     /**
@@ -229,11 +231,14 @@ class CookieAuthenticator extends AbstractAuthenticator implements PersistenceIn
         $identity = $request->getAttribute($this->getConfig('identityAttribute'));
         if (isset($credentials['series']) && $identity instanceof EntityInterface && !empty($identity->getSource())) {
             $userModel = $identity->getSource();
-            $userTable = $this->fetchTable($userModel);
+            $primaryKey = $this->fetchTable($userModel)->getPrimaryKey();
+            if (!is_string($primaryKey)) {
+                throw new InvalidArgumentException('User model must have a single primary key.');
+            }
             $tokenTable = $this->fetchTable($this->getConfig('tokenStorageModel'));
             $conditions = [
                 'model' => $userModel,
-                'foreign_id' => $identity[$userTable->getPrimaryKey()],
+                'foreign_id' => $identity[$primaryKey],
                 'series' => $credentials['series'],
             ];
             $tokenTable->deleteAll($conditions);
